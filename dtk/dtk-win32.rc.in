@@ -1,0 +1,30 @@
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION @DTK_MAJOR_VERSION@,@DTK_MINOR_VERSION@,@DTK_MICRO_VERSION@,0
+  PRODUCTVERSION @DTK_MAJOR_VERSION@,@DTK_MINOR_VERSION@,@DTK_MICRO_VERSION@,0
+  FILEFLAGSMASK 0
+  FILEFLAGS 0
+  FILEOS VOS__WINDOWS32
+  FILETYPE VFT_DLL
+  FILESUBTYPE VFT2_UNKNOWN
+  BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+      BLOCK "040904B0"
+      BEGIN
+	VALUE "CompanyName", "Deepin Inc."
+	VALUE "FileDescription", "Dtk"
+	VALUE "FileVersion", "@DTK_VERSION@.0"
+	VALUE "InternalName", "libdtk-2.0-@LT_CURRENT_MINUS_AGE@"
+	VALUE "LegalCopyright", "Copyright © 2013 Zhai Xiang"
+	VALUE "OriginalFilename", "libdtk-2.0-@LT_CURRENT_MINUS_AGE@.dll"
+	VALUE "ProductName", "Dtk"
+	VALUE "ProductVersion", "@DTK_VERSION@"
+      END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+      VALUE "Translation", 0x409, 1200
+    END
+  END
