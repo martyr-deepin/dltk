@@ -61,7 +61,15 @@
 
 #define ARROW_SPACE 20
 #define ARROW_TEXT_SPACE 5
-#define WEEK_NUM_BG_COLOR "#EBF4FD"
+#define BORDER_LINE_WIDTH 1.0
+#define DAY_NAME_PADDING 3
+#define BORDER_COLOR "#E2E2E2"
+#define DTK_HEADER_BG_COLOR "#EEEEEE"
+#define DAY_NAME_BG_COLOR "#EBF4FD"
+#define DAY_NAME_FG_COLOR "#000000"
+#define SELECTED_TEXT_BG_COLOR "#EBF4FD"
+#define SELECTED_TEXT_BORDER_COLOR "#7CA3CE"
+#define DAY_FG_COLOR "#000000"
 
 /***************************************************************************/
 /* The following date routines are taken from the lib_date package. 
@@ -86,6 +94,12 @@ static guint  day_of_week(guint year, guint mm, guint dd);
 static glong  dates_difference(guint year1, guint mm1, guint dd1,
 			       guint year2, guint mm2, guint dd2);
 static guint  weeks_in_year(guint year);
+static void m_draw_rect_stroke(GdkWindow *window, 
+                               int x, 
+                               int y, 
+                               int width, 
+                               int height, 
+                               gchar *color_spec);
 
 static gboolean 
 leap (guint year)
@@ -1564,42 +1578,42 @@ calendar_get_ysep (DtkCalendar *calendar)
   return ysep;
 }
 
-static void
-calendar_realize_day_names (DtkCalendar *calendar)
+static void calendar_realize_day_names(DtkCalendar *calendar)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
-  GdkWindowAttr attributes;
-  gint attributes_mask;
-  gint inner_border = calendar_get_inner_border (calendar);
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(calendar);
+    GdkWindowAttr attributes;
+    gint attributes_mask;
+    gint inner_border = calendar_get_inner_border(calendar);
 
-  /* Day names	window --------------------------------- */
-  if ( calendar->display_flags & DTK_CALENDAR_SHOW_DAY_NAMES)
-    {
-      attributes.wclass = GDK_INPUT_OUTPUT;
-      attributes.window_type = GDK_WINDOW_CHILD;
-      attributes.visual = gtk_widget_get_visual (widget);
-      attributes.colormap = gtk_widget_get_colormap (widget);
-      attributes.event_mask = gtk_widget_get_events (widget) | GDK_EXPOSURE_MASK;
-      attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
-      attributes.x = (widget->style->xthickness + inner_border);
-      attributes.y = priv->header_h + (widget->style->ythickness 
+    /* Day names	window --------------------------------- */
+    if ( calendar->display_flags & DTK_CALENDAR_SHOW_DAY_NAMES) {
+        attributes.wclass = GDK_INPUT_OUTPUT;
+        attributes.window_type = GDK_WINDOW_CHILD;
+        attributes.visual = gtk_widget_get_visual(widget);
+        attributes.colormap = gtk_widget_get_colormap(widget);
+        attributes.event_mask = gtk_widget_get_events (widget) | GDK_EXPOSURE_MASK;
+        attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
+        attributes.x = (widget->style->xthickness + inner_border);
+        attributes.x -= DAY_NAME_PADDING;
+        attributes.y = priv->header_h + (widget->style->ythickness 
 					   + inner_border);
-      attributes.width = (widget->allocation.width 
-			  - (widget->style->xthickness + inner_border) 
-			  * 2);
-      attributes.height = priv->day_name_h;
-      priv->day_name_win = gdk_window_new (widget->window,
-					   &attributes, 
-					   attributes_mask);
+        attributes.y -= DAY_NAME_PADDING;
+        attributes.width = widget->allocation.width - 
+            (widget->style->xthickness + inner_border) * 2;
+        attributes.width += DAY_NAME_PADDING * 2;
+        attributes.height = priv->day_name_h;
+        priv->day_name_win = gdk_window_new(widget->window, 
+                                            &attributes, 
+                                            attributes_mask);
+      /*
       gdk_window_set_background (priv->day_name_win, 
 				 BACKGROUND_COLOR ( GTK_WIDGET ( calendar)));
-      gdk_window_show (priv->day_name_win);
-      gdk_window_set_user_data (priv->day_name_win, widget);
-    }
-  else
-    {
-      priv->day_name_win = NULL;
+      */
+        gdk_window_show(priv->day_name_win);
+        gdk_window_set_user_data(priv->day_name_win, widget);
+    } else {
+        priv->day_name_win = NULL;
     }
 }
 
@@ -1632,8 +1646,10 @@ calendar_realize_week_numbers (DtkCalendar *calendar)
       attributes.height = priv->main_h;
       priv->week_win = gdk_window_new (widget->window,
 				       &attributes, attributes_mask);
-      gdk_window_set_background (priv->week_win,  
+        /*
+        gdk_window_set_background (priv->week_win,  
 				 BACKGROUND_COLOR (GTK_WIDGET (calendar)));
+        */
       gdk_window_show (priv->week_win);
       gdk_window_set_user_data (priv->week_win, widget);
     } 
@@ -2054,6 +2070,7 @@ dtk_calendar_size_request (GtkWidget	  *widget,
       priv->day_name_h = (priv->max_label_char_ascent
 				  + priv->max_label_char_descent
 				  + 2 * (focus_padding + focus_width) + calendar_margin);
+      priv->day_name_h += DAY_NAME_PADDING * 2;
       calendar_margin = calendar_ysep;
     } 
   else
@@ -2210,18 +2227,6 @@ static void calendar_paint_header(DtkCalendar *calendar)
   
     max_month_width = priv->max_month_width;
     max_year_width = priv->max_year_width;
-  
-    gtk_paint_shadow(widget->style, 
-                     priv->header_win, 
-                     GTK_STATE_NORMAL, 
-                     GTK_SHADOW_OUT, 
-                     NULL, 
-                     widget, 
-                     "calendar", 
-                     0, 
-                     0, 
-                     header_width, 
-                     priv->header_h);
 
     tmp_time = 1;  /* Jan 1 1970, 00:00:01 UTC */
     tm = gmtime(&tmp_time);
@@ -2256,7 +2261,7 @@ static void calendar_paint_header(DtkCalendar *calendar)
         x = rect.x + priv->arrow_width + ARROW_TEXT_SPACE;
     }
 
-    gdk_cairo_set_source_color (cr, HEADER_FG_COLOR (GTK_WIDGET (calendar)));
+    gdk_cairo_set_source_color(cr, HEADER_FG_COLOR(GTK_WIDGET(calendar)));
     cairo_move_to(cr, x, y);
     pango_cairo_show_layout(cr, layout);
   
@@ -2284,87 +2289,94 @@ static void calendar_paint_header(DtkCalendar *calendar)
     cairo_destroy(cr);
 }
 
-static void
-calendar_paint_day_names (DtkCalendar *calendar)
+static void calendar_paint_day_names(DtkCalendar *calendar)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
-  cairo_t *cr;
-  char buffer[255];
-  int day,i;
-  int day_width, cal_width;
-  int day_wid_sep;
-  PangoLayout *layout;
-  PangoRectangle logical_rect;
-  gint focus_padding;
-  gint focus_width;
-  gint calendar_ysep = calendar_get_ysep (calendar);
-  gint calendar_xsep = calendar_get_xsep (calendar);
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(calendar);
+    cairo_t *cr = NULL;
+    char buffer[255];
+    int day, i;
+    int day_width, cal_width;
+    int day_wid_sep;
+    PangoLayout *layout;
+    PangoRectangle logical_rect;
+    gint focus_padding;
+    gint focus_width;
+    gint calendar_ysep = calendar_get_ysep(calendar);
+    gint calendar_xsep = calendar_get_xsep(calendar);
+    GdkColor color;
 
-  cr = gdk_cairo_create (priv->day_name_win);
+    cr = gdk_cairo_create(priv->day_name_win);
   
-  gtk_widget_style_get (GTK_WIDGET (widget),
-			"focus-line-width", &focus_width,
-			"focus-padding", &focus_padding,
-			NULL);
+    gtk_widget_style_get(GTK_WIDGET(widget), 
+                         "focus-line-width", 
+                         &focus_width, 
+                         "focus-padding", 
+                         &focus_padding, 
+                         NULL);
   
-  day_width = priv->day_width;
-  cal_width = widget->allocation.width;
-  day_wid_sep = day_width + DAY_XSEP;
+    day_width = priv->day_width;
+    cal_width = widget->allocation.width;
+    day_wid_sep = day_width + DAY_XSEP;
   
-  /*
-   * Draw rectangles as inverted background for the labels.
-   */
-
-  gdk_cairo_set_source_color (cr, SELECTED_BG_COLOR (widget));
-  cairo_rectangle (cr,
-		   CALENDAR_MARGIN, CALENDAR_MARGIN,
-		   cal_width-CALENDAR_MARGIN * 2,
-		   priv->day_name_h - CALENDAR_MARGIN);
-  cairo_fill (cr);
+    /*
+     * TODO: Draw rectangles as inverted background for the labels.
+     */
+    gdk_color_parse(DAY_NAME_BG_COLOR, &color);
+    gdk_cairo_set_source_color(cr, &color);
+    cairo_rectangle(cr, 
+                    CALENDAR_MARGIN, 
+                    CALENDAR_MARGIN, 
+                    cal_width-CALENDAR_MARGIN * 2, 
+                    priv->day_name_h - CALENDAR_MARGIN);
+    cairo_fill(cr);
   
-  if (calendar->display_flags & DTK_CALENDAR_SHOW_WEEK_NUMBERS)
-    {
-      cairo_rectangle (cr, 
-		       CALENDAR_MARGIN,
-		       priv->day_name_h - calendar_ysep,
-		       priv->week_width - calendar_ysep - CALENDAR_MARGIN,
-		       calendar_ysep);
-      cairo_fill (cr);
+    if (calendar->display_flags & DTK_CALENDAR_SHOW_WEEK_NUMBERS) {
+        cairo_rectangle(cr, 
+                        CALENDAR_MARGIN, 
+                        priv->day_name_h - calendar_ysep, 
+                        priv->week_width - calendar_ysep - CALENDAR_MARGIN, 
+                        calendar_ysep);
+        cairo_fill(cr);
     }
   
-  /*
-   * Write the labels
-   */
+    /*
+     * Write the labels
+     */
+    layout = gtk_widget_create_pango_layout (widget, NULL);
 
-  layout = gtk_widget_create_pango_layout (widget, NULL);
+    gdk_color_parse(DAY_NAME_FG_COLOR, &color);
+    gdk_cairo_set_source_color(cr, &color);
+    for (i = 0; i < 7; i++) {
+        if (gtk_widget_get_direction(GTK_WIDGET(calendar)) == GTK_TEXT_DIR_RTL)
+	        day = 6 - i;
+        else
+	        day = i;
+      
+        
+        day = (day + priv->week_start) % 7;
+        g_snprintf(buffer, 
+                   sizeof(buffer), 
+                   "%s", 
+                   default_abbreviated_dayname[day]);
 
-  gdk_cairo_set_source_color (cr, SELECTED_FG_COLOR (widget));
-  for (i = 0; i < 7; i++)
-    {
-      if (gtk_widget_get_direction (GTK_WIDGET (calendar)) == GTK_TEXT_DIR_RTL)
-	day = 6 - i;
-      else
-	day = i;
-      day = (day + priv->week_start) % 7;
-      g_snprintf (buffer, sizeof (buffer), "%s", default_abbreviated_dayname[day]);
+        pango_layout_set_text (layout, buffer, -1);
+        pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
 
-      pango_layout_set_text (layout, buffer, -1);
-      pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
-
-      cairo_move_to (cr, 
+        cairo_move_to(cr, 
 		     (CALENDAR_MARGIN +
 		      + (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR ?
 			 (priv->week_width + (priv->week_width ? calendar_xsep : 0))
 			 : 0)
 		      + day_wid_sep * i
 		      + (day_width - logical_rect.width)/2),
-		     CALENDAR_MARGIN + focus_width + focus_padding + logical_rect.y);
-      pango_cairo_show_layout (cr, layout);
+		     CALENDAR_MARGIN + focus_width + focus_padding + logical_rect.y + 
+             DAY_NAME_PADDING);
+        pango_cairo_show_layout (cr, layout);
     }
   
-  g_object_unref (layout);
-  cairo_destroy (cr);
+    g_object_unref(layout);
+    cairo_destroy(cr);
 }
 
 static void calendar_paint_week_numbers(DtkCalendar *calendar)
@@ -2391,24 +2403,25 @@ static void calendar_paint_week_numbers(DtkCalendar *calendar)
 			"focus-padding", &focus_padding,
 			NULL);
   
-  /*
-   * Draw a rectangle as inverted background for the labels.
-   */
-    gdk_color_parse(WEEK_NUM_BG_COLOR, &bg_color);
+    /*
+     * Draw a rectangle as inverted background for the labels.
+     */
+    gdk_color_parse(DAY_NAME_BG_COLOR, &bg_color);
     gdk_cairo_set_source_color(cr, &bg_color);
-  if (priv->day_name_win)
-    cairo_rectangle (cr, 
+    if (priv->day_name_win) {
+        cairo_rectangle (cr, 
 		     CALENDAR_MARGIN,
 		     0,
 		     priv->week_width - CALENDAR_MARGIN,
 		     priv->main_h - CALENDAR_MARGIN);
-  else
-    cairo_rectangle (cr,
+    } else {
+        cairo_rectangle (cr,
 		     CALENDAR_MARGIN,
 		     CALENDAR_MARGIN,
 		     priv->week_width - CALENDAR_MARGIN,
 		     priv->main_h - 2 * CALENDAR_MARGIN);
-  cairo_fill (cr);
+    }
+    cairo_fill (cr);
   
   /*
    * Write the labels
@@ -2506,66 +2519,67 @@ is_color_attribute (PangoAttribute *attribute,
           attribute->klass->type == PANGO_ATTR_BACKGROUND);
 }
 
-static void
-calendar_paint_day (DtkCalendar *calendar,
-		    gint	     row,
-		    gint	     col)
+static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
-  cairo_t *cr;
-  GdkColor *text_color;
-  gchar *detail;
-  gchar buffer[32];
-  gint day;
-  gint x_loc, y_loc;
-  GdkRectangle day_rect;
+    GtkWidget *widget = GTK_WIDGET (calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
+    cairo_t *cr;
+    GdkColor text_bg_color;
+    GdkColor text_border_color;
+    GdkColor day_fg_color;
+    GdkColor *text_color;
+    gchar *detail;
+    gchar buffer[32];
+    gint day;
+    gint x_loc, y_loc;
+    GdkRectangle day_rect;
 
-  PangoLayout *layout;
-  PangoRectangle logical_rect;
-  gboolean overflow = FALSE;
-  gboolean show_details;
+    PangoLayout *layout;
+    PangoRectangle logical_rect;
+    gboolean overflow = FALSE;
+    gboolean show_details;
 
-  g_return_if_fail (row < 6);
-  g_return_if_fail (col < 7);
+    g_return_if_fail (row < 6);
+    g_return_if_fail (col < 7);
 
-  cr = gdk_cairo_create (priv->main_win);
+    cr = gdk_cairo_create (priv->main_win);
 
-  day = calendar->day[row][col];
-  show_details = (calendar->display_flags & DTK_CALENDAR_SHOW_DETAILS);
+    day = calendar->day[row][col];
+    show_details = (calendar->display_flags & DTK_CALENDAR_SHOW_DETAILS);
 
-  calendar_day_rectangle (calendar, row, col, &day_rect);
+    calendar_day_rectangle (calendar, row, col, &day_rect);
   
-  if (calendar->day_month[row][col] == MONTH_PREV)
-    {
-      text_color = PREV_MONTH_COLOR (widget);
+    if (calendar->day_month[row][col] == MONTH_PREV) {
+        text_color = PREV_MONTH_COLOR (widget);
     } 
-  else if (calendar->day_month[row][col] == MONTH_NEXT)
-    {
+    else if (calendar->day_month[row][col] == MONTH_NEXT) {
       text_color =  NEXT_MONTH_COLOR (widget);
-    } 
-  else 
-    {
+    } else {
 #if 0      
-      if (calendar->highlight_row == row && calendar->highlight_col == col)
-	{
-	  cairo_set_source_color (cr, HIGHLIGHT_BG_COLOR (widget));
-	  gdk_cairo_rectangle (cr, &day_rect);
-	  cairo_fill (cr);
-	}
-#endif     
-      if (calendar->selected_day == day)
-	{
-	  gdk_cairo_set_source_color (cr, SELECTED_BG_COLOR (widget));
-	  gdk_cairo_rectangle (cr, &day_rect);
-	  cairo_fill (cr);
-	}
-      if (calendar->selected_day == day)
-	text_color = SELECTED_FG_COLOR (widget);
-      else if (calendar->marked_date[day-1])
-	text_color = MARKED_COLOR (widget);
-      else
-	text_color = NORMAL_DAY_COLOR (widget);
+        if (calendar->highlight_row == row && calendar->highlight_col == col) {
+	        cairo_set_source_color (cr, HIGHLIGHT_BG_COLOR (widget));
+	        gdk_cairo_rectangle (cr, &day_rect);
+	        cairo_fill (cr);
+	    }
+#endif    
+        /* TODO: draw text bg color */
+        if (calendar->selected_day == day) {
+	        gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
+            gdk_cairo_set_source_color(cr, &text_bg_color);
+	        gdk_cairo_rectangle(cr, &day_rect);
+            cairo_fill(cr);
+
+            gdk_color_parse(SELECTED_TEXT_BORDER_COLOR, &text_border_color);
+            gdk_cairo_set_source_color(cr, &text_border_color);
+            gdk_cairo_rectangle(cr, &day_rect);
+            cairo_stroke(cr);
+	    }
+        if (calendar->selected_day == day)
+	        text_color = SELECTED_FG_COLOR (widget);
+        else if (calendar->marked_date[day-1])
+	        text_color = MARKED_COLOR (widget);
+        else
+	        text_color = NORMAL_DAY_COLOR (widget);
     }
 
   /* Translators: this defines whether the day numbers should use
@@ -2591,7 +2605,9 @@ calendar_paint_day (DtkCalendar *calendar,
   x_loc = day_rect.x + (day_rect.width - logical_rect.width) / 2;
   y_loc = day_rect.y;
 
-  gdk_cairo_set_source_color (cr, text_color);
+    /* TODO: draw text color */
+    gdk_color_parse(DAY_FG_COLOR, &day_fg_color);
+    gdk_cairo_set_source_color(cr, &day_fg_color);
   cairo_move_to (cr, x_loc, y_loc);
   pango_cairo_show_layout (cr, layout);
 
@@ -2742,6 +2758,32 @@ static void calendar_paint_arrow(DtkCalendar *calendar, guint arrow)
     }
 }
 
+static void m_draw_rect_stroke(GdkWindow *window, 
+                               int x, 
+                               int y, 
+                               int width, 
+                               int height, 
+                               gchar *color_spec) 
+{
+    cairo_t *cr = NULL;
+    GdkColor color;
+    
+    cr = gdk_cairo_create(window);
+    if (!cr) 
+        return;
+    gdk_color_parse(color_spec, &color);
+    gdk_cairo_set_source_color(cr, &color);
+
+    cairo_set_line_width(cr, BORDER_LINE_WIDTH);
+    cairo_rectangle(cr, x, y, width, height);
+    cairo_stroke(cr);
+
+    if (cr) {
+        cairo_destroy(cr);
+        cr = NULL;
+    }
+}
+
 static gboolean dtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 {
     DtkCalendar *calendar = DTK_CALENDAR(widget);
@@ -2765,26 +2807,18 @@ static gboolean dtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
       
         if (event->window == priv->week_win)
 	        calendar_paint_week_numbers(calendar);
-      
-        if (event->window == widget->window) {
-	        gtk_paint_shadow(widget->style, 
-                             widget->window, 
-                             gtk_widget_get_state(widget), 
-                             GTK_SHADOW_IN, 
-                             NULL, 
-                             widget, 
-                             "calendar", 
-                             0, 
-                             0, 
-                             widget->allocation.width, 
-                             widget->allocation.height);
-	    }
+        
+        m_draw_rect_stroke(widget->window, 
+                           BORDER_LINE_WIDTH, 
+                           BORDER_LINE_WIDTH, 
+                           widget->allocation.width - BORDER_LINE_WIDTH, 
+                           widget->allocation.height - BORDER_LINE_WIDTH, 
+                           BORDER_COLOR);
     }
   
-  return FALSE;
+    return FALSE;
 }
 
-
 /****************************************
  *           Mouse handling             *
  ****************************************/
@@ -3298,40 +3332,80 @@ dtk_calendar_key_press (GtkWidget   *widget,
   return return_val;
 }
 
-
+static void m_draw_rect_fill(GdkWindow *window, 
+                             int x, 
+                             int y, 
+                             int width, 
+                             int height, 
+                             gchar *color_spec) 
+{
+    cairo_t *cr = NULL;                                                             
+    GdkColor color;                                                                 
+                                                                                    
+    cr = gdk_cairo_create(window);                                                  
+    if (!cr)                                                                        
+        return;                                                                     
+    gdk_color_parse(color_spec, &color);                                            
+    gdk_cairo_set_source_color(cr, &color);                                         
+                                                                                    
+    cairo_set_line_width(cr, BORDER_LINE_WIDTH);                                    
+    cairo_rectangle(cr, x, y, width, height);                                       
+    cairo_fill(cr);                                                               
+                                                                                    
+    if (cr) {                                                                       
+        cairo_destroy(cr);                                                          
+        cr = NULL;                                                                  
+    }            
+}
+
 /****************************************
  *           Misc widget methods        *
  ****************************************/
-
-static void
-calendar_set_background (GtkWidget *widget)
+static void calendar_set_background(GtkWidget *widget)
 {
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (widget);
-  gint i;
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(widget);
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+    int depth = 0;
+    gint i;
   
-  if (gtk_widget_get_realized (widget))
-    {
-      for (i = 0; i < 4; i++)
-	{
-	  if (priv->arrow_win[i])
-	    gdk_window_set_background (priv->arrow_win[i], 
-				       HEADER_BG_COLOR (widget));
-	}
-      if (priv->header_win)
-	gdk_window_set_background (priv->header_win, 
-				   HEADER_BG_COLOR (widget));
-      if (priv->day_name_win)
-	gdk_window_set_background (priv->day_name_win, 
+    if (gtk_widget_get_realized(widget)) {
+        for (i = 0; i < 4; i++) {
+	        if (priv->arrow_win[i]) {
+	            gdk_window_set_background(priv->arrow_win[i], HEADER_BG_COLOR (widget));
+            }
+	    }
+        if (priv->header_win) {
+	        gdk_window_get_geometry(priv->header_win, &x, &y, &width, &height, &depth);
+            m_draw_rect_fill(priv->header_win, 
+                             x - BORDER_LINE_WIDTH, 
+                             y - BORDER_LINE_WIDTH, 
+                             width, 
+                             height, 
+                             DTK_HEADER_BG_COLOR);
+        }
+        /*
+        if (priv->day_name_win)
+	        gdk_window_set_background (priv->day_name_win, 
 				   BACKGROUND_COLOR (widget));
-      if (priv->week_win)
+        */
+        /*
+        if (priv->week_win)
 	gdk_window_set_background (priv->week_win,
 				   BACKGROUND_COLOR (widget));
-      if (priv->main_win)
+        */
+        /*
+        if (priv->main_win)
 	gdk_window_set_background (priv->main_win,
 				   BACKGROUND_COLOR (widget));
-      if (widget->window)
-	gdk_window_set_background (widget->window,
+        */
+        /*
+        if (widget->window)
+	        gdk_window_set_background (widget->window,
 				   BACKGROUND_COLOR (widget)); 
+        */
     }
 }
 
