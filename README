@@ -1,4 +1,15 @@
-dtk
+Dtk
 ===
 
-Deepin Gtk
+Deepin Gtk+-2.0 Widgets
+
+Build && Install
+================
+./autogen.sh --prefix=/usr
+make clean
+make
+sudo make install
+
+Python Binding
+==============
+sudo python setup.py install
