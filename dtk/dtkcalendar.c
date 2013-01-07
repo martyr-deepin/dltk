@@ -81,8 +81,6 @@ static const guint days_in_months[2][14] =
   { 0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
 };
 
-static int m_header_padding_x = 30;
-
 static glong  calc_days(guint year, guint mm, guint dd);
 static guint  day_of_week(guint year, guint mm, guint dd);
 static glong  dates_difference(guint year1, guint mm1, guint dd1,
@@ -687,35 +685,34 @@ dtk_calendar_class_init (DtkCalendarClass *class)
   g_type_class_add_private (gobject_class, sizeof (DtkCalendarPrivate));
 }
 
-static void
-dtk_calendar_init (DtkCalendar *calendar)
+static void dtk_calendar_init(DtkCalendar *calendar)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  time_t secs;
-  struct tm *tm;
-  gint i;
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    time_t secs;
+    struct tm *tm;
+    gint i;
 #ifdef G_OS_WIN32
-  wchar_t wbuffer[100];
+    wchar_t wbuffer[100];
 #else
-  char buffer[255];
-  time_t tmp_time;
+    char buffer[255];
+    time_t tmp_time;
 #endif
-  DtkCalendarPrivate *priv;
-  gchar *year_before;
+    DtkCalendarPrivate *priv;
+    gchar *year_before;
 #ifdef HAVE__NL_TIME_FIRST_WEEKDAY
-  union { unsigned int word; char *string; } langinfo;
-  gint week_1stday = 0;
-  gint first_weekday = 1;
-  guint week_origin;
+    union { unsigned int word; char *string; } langinfo;
+    gint week_1stday = 0;
+    gint first_weekday = 1;
+    guint week_origin;
 #else
-  gchar *week_start;
+    gchar *week_start;
 #endif
 
-  priv = calendar->priv = G_TYPE_INSTANCE_GET_PRIVATE (calendar,
+    priv = calendar->priv = G_TYPE_INSTANCE_GET_PRIVATE(calendar,
 						       DTK_TYPE_CALENDAR,
 						       DtkCalendarPrivate);
 
-  gtk_widget_set_can_focus (widget, TRUE);
+    gtk_widget_set_can_focus(widget, TRUE);
   
   if (!default_abbreviated_dayname[0])
     for (i=0; i<7; i++)
@@ -792,7 +789,7 @@ dtk_calendar_init (DtkCalendar *calendar)
   gtk_drag_dest_set (widget, 0, NULL, 0, GDK_ACTION_COPY);
   gtk_drag_dest_add_text_targets (widget);
 
-  priv->year_before = 0;
+  priv->year_before = 1;
 
   /* Translate to calendar:YM if you want years to be displayed
    * before months; otherwise translate to calendar:MY.
@@ -1186,30 +1183,31 @@ static void calendar_arrow_rectangle(DtkCalendar *calendar,
     switch (arrow) {
     case ARROW_MONTH_LEFT:
         if (year_left) {
-            rect->x = widget->allocation.width - 2 * widget->style->xthickness 
-                - (3 + 2*priv->arrow_width + priv->max_month_width);
+            rect->x = (widget->allocation.width + ARROW_SPACE) / 2;
         } else {
-	        rect->x = 3;
+	        rect->x = (widget->allocation.width - ARROW_SPACE) / 2 - 
+                priv->max_month_width;
         }
         break;
     case ARROW_MONTH_RIGHT:
         if (year_left) {
-	        rect->x = widget->allocation.width - 2 * widget->style->xthickness 
-                - 3 - priv->arrow_width;
+            rect->x = (widget->allocation.width + ARROW_SPACE) / 2 + 
+                priv->max_month_width;
         } else {
-	        rect->x = priv->arrow_width + priv->max_month_width;
+	        rect->x = (widget->allocation.width - ARROW_SPACE) / 2;
         }
         break;
     case ARROW_YEAR_LEFT:
         if (year_left) {
-	        rect->x = 3;
+	        rect->x = (widget->allocation.width - ARROW_SPACE) / 2 - 
+                priv->max_year_width - ARROW_TEXT_SPACE * 2;
         } else {
 	        rect->x = (widget->allocation.width + ARROW_SPACE) / 2;
         }
         break;
     case ARROW_YEAR_RIGHT:
         if (year_left) { 
-	        rect->x = priv->arrow_width + priv->max_year_width;
+	        rect->x = (widget->allocation.width - ARROW_SPACE) / 2;
         } else {
 	        rect->x = (widget->allocation.width + ARROW_SPACE) / 2 + 
                 priv->max_year_width + ARROW_TEXT_SPACE * 2;
@@ -2248,60 +2246,42 @@ static void calendar_paint_header(DtkCalendar *calendar)
   
     /* Draw title */
     y = (priv->header_h - logical_rect.height) / 2;
-
-    m_header_padding_x = header_width / 2 - max_year_width;
   
     /* Draw year and its arrows */
     if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE) {
-        if (year_left) {
-            x = 3 + (max_year_width - logical_rect.width)/2;
-            /* TODO: + padding_x */
-            x += m_header_padding_x;
-        } else {
-            x = header_width - (3 + max_year_width - 
-                (max_year_width - logical_rect.width) / 2);
-            /* TODO: - padding_x */
-            x -= m_header_padding_x;
-        }
+        calendar_arrow_rectangle(calendar, ARROW_YEAR_LEFT, &rect);
+        x = rect.x + priv->arrow_width + ARROW_TEXT_SPACE;
     } else {
-        if (year_left) {
-            x = 3 + priv->arrow_width + 
-                (max_year_width - logical_rect.width) / 2;
-            x += m_header_padding_x;
-        } else {
-            GdkRectangle rect;
-            calendar_arrow_rectangle(calendar, ARROW_YEAR_LEFT, &rect);
-            x = rect.x + priv->arrow_width + ARROW_TEXT_SPACE;
-        }
+        calendar_arrow_rectangle(calendar, ARROW_YEAR_LEFT, &rect);
+        x = rect.x + priv->arrow_width + ARROW_TEXT_SPACE;
     }
 
     gdk_cairo_set_source_color (cr, HEADER_FG_COLOR (GTK_WIDGET (calendar)));
     cairo_move_to(cr, x, y);
     pango_cairo_show_layout(cr, layout);
   
-  /* Draw month */
-  g_snprintf (buffer, sizeof (buffer), "%s", default_monthname[calendar->month]);
-  pango_layout_set_text (layout, buffer, -1);
-  pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
+    /* Draw month */
+    g_snprintf(buffer, sizeof(buffer), "%s", default_monthname[calendar->month]);
+    pango_layout_set_text(layout, buffer, -1);
+    pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
 
-  if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE)
-    if (year_left)
-      x = header_width - (3 + max_month_width
+    if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE) {
+        if (year_left) {
+            x = header_width - (3 + max_month_width
 			  - (max_month_width - logical_rect.width)/2);      
-    else
-    x = 3 + (max_month_width - logical_rect.width) / 2;
-  else
-    if (year_left)
-      x = header_width - (3 + priv->arrow_width + max_month_width
-			  - (max_month_width - logical_rect.width)/2);
-    else
-    x = 3 + priv->arrow_width + (max_month_width - logical_rect.width)/2;
+        } else {
+            x = 3 + (max_month_width - logical_rect.width) / 2;
+        }
+    } else {
+        calendar_arrow_rectangle(calendar, ARROW_MONTH_LEFT, &rect);
+        x = rect.x + ARROW_SPACE;
+    }
 
-  cairo_move_to (cr, x, y);
-  pango_cairo_show_layout (cr, layout);
+    cairo_move_to(cr, x, y);
+    pango_cairo_show_layout(cr, layout);
 
-  g_object_unref (layout);
-  cairo_destroy (cr);
+    g_object_unref(layout);
+    cairo_destroy(cr);
 }
 
 static void
