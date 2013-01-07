@@ -59,7 +59,9 @@
 #define GTK_PARAM_READWRITE G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB
 #define _gtk_marshal_VOID__VOID g_cclosure_marshal_VOID__VOID
 
-#define HEADER_PADDING_X 30
+#define ARROW_SPACE 20
+#define ARROW_TEXT_SPACE 5
+#define WEEK_NUM_BG_COLOR "#EBF4FD"
 
 /***************************************************************************/
 /* The following date routines are taken from the lib_date package. 
@@ -78,6 +80,8 @@ static const guint days_in_months[2][14] =
   { 0, 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
   { 0, 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 }
 };
+
+static int m_header_padding_x = 30;
 
 static glong  calc_days(guint year, guint mm, guint dd);
 static guint  day_of_week(guint year, guint mm, guint dd);
@@ -1162,58 +1166,55 @@ calendar_row_from_y (DtkCalendar *calendar,
   return row;
 }
 
-static void
-calendar_arrow_rectangle (DtkCalendar  *calendar,
-			  guint	        arrow,
-			  GdkRectangle *rect)
+static void calendar_arrow_rectangle(DtkCalendar *calendar, 
+                                     guint arrow, 
+                                     GdkRectangle *rect)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
-  gboolean year_left;
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(calendar);
+    gboolean year_left;
 
-  if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR) 
-    year_left = priv->year_before;
-  else
-    year_left = !priv->year_before;
+    if (gtk_widget_get_direction(widget) == GTK_TEXT_DIR_LTR) 
+        year_left = priv->year_before;
+    else
+        year_left = !priv->year_before;
     
-  rect->y = 3;
-  rect->width = priv->arrow_width;
-  rect->height = priv->header_h - 7;
-  
-  switch (arrow)
-    {
+    rect->y = 3;
+    rect->width = priv->arrow_width;
+    rect->height = priv->header_h - 7;
+
+    switch (arrow) {
     case ARROW_MONTH_LEFT:
-      if (year_left) 
-	rect->x = (widget->allocation.width - 2 * widget->style->xthickness
-		   - (3 + 2*priv->arrow_width 
-		      + priv->max_month_width));
-      else
-	rect->x = 3;
-      break;
+        if (year_left) {
+            rect->x = widget->allocation.width - 2 * widget->style->xthickness 
+                - (3 + 2*priv->arrow_width + priv->max_month_width);
+        } else {
+	        rect->x = 3;
+        }
+        break;
     case ARROW_MONTH_RIGHT:
-      if (year_left) 
-	rect->x = (widget->allocation.width - 2 * widget->style->xthickness 
-		   - 3 - priv->arrow_width);
-      else
-	rect->x = (priv->arrow_width 
-		   + priv->max_month_width);
-      break;
+        if (year_left) {
+	        rect->x = widget->allocation.width - 2 * widget->style->xthickness 
+                - 3 - priv->arrow_width;
+        } else {
+	        rect->x = priv->arrow_width + priv->max_month_width;
+        }
+        break;
     case ARROW_YEAR_LEFT:
-      if (year_left) 
-	rect->x = 3;
-      else
-	rect->x = (widget->allocation.width - 2 * widget->style->xthickness
-		   - (3 + 2*priv->arrow_width 
-		      + priv->max_year_width));
-      break;
+        if (year_left) {
+	        rect->x = 3;
+        } else {
+	        rect->x = (widget->allocation.width + ARROW_SPACE) / 2;
+        }
+        break;
     case ARROW_YEAR_RIGHT:
-      if (year_left) 
-	rect->x = (priv->arrow_width 
-		   + priv->max_year_width);
-      else
-	rect->x = (widget->allocation.width - 2 * widget->style->xthickness 
-		   - 3 - priv->arrow_width);
-      break;
+        if (year_left) { 
+	        rect->x = priv->arrow_width + priv->max_year_width;
+        } else {
+	        rect->x = (widget->allocation.width + ARROW_SPACE) / 2 + 
+                priv->max_year_width + ARROW_TEXT_SPACE * 2;
+        }
+        break;
     }
 }
 
@@ -1440,13 +1441,10 @@ dtk_calendar_get_property (GObject      *object,
     }
 }
 
-
 /****************************************
  *             Realization              *
  ****************************************/
-
-static void
-calendar_realize_arrows (DtkCalendar *calendar)
+static void calendar_realize_arrows(DtkCalendar *calendar)
 {
   GtkWidget *widget = GTK_WIDGET (calendar);
   DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
@@ -2182,89 +2180,104 @@ dtk_calendar_size_allocate (GtkWidget	  *widget,
     }
 }
 
-
 /****************************************
  *              Repainting              *
  ****************************************/
-
-static void
-calendar_paint_header (DtkCalendar *calendar)
+static void calendar_paint_header(DtkCalendar *calendar)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
-  cairo_t *cr;
-  char buffer[255];
-  int x, y;
-  gint header_width;
-  gint max_month_width;
-  gint max_year_width;
-  PangoLayout *layout;
-  PangoRectangle logical_rect;
-  gboolean year_left;
-  time_t tmp_time;
-  struct tm *tm;
-  gchar *str;
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(calendar);
+    cairo_t *cr;
+    char buffer[255];
+    int x, y;
+    gint header_width;
+    gint max_month_width;
+    gint max_year_width;
+    PangoLayout *layout;
+    PangoRectangle logical_rect;
+    gboolean year_left;
+    time_t tmp_time;
+    struct tm *tm;
+    gchar *str;
+    GdkRectangle rect;
 
-  if (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR) 
-    year_left = priv->year_before;
-  else
-    year_left = !priv->year_before;
+    if (gtk_widget_get_direction(widget) == GTK_TEXT_DIR_LTR) 
+        year_left = priv->year_before;
+    else
+        year_left = !priv->year_before;
 
-  cr = gdk_cairo_create (priv->header_win);
+    cr = gdk_cairo_create(priv->header_win);
   
-  header_width = widget->allocation.width - 2 * widget->style->xthickness;
+    header_width = widget->allocation.width - 2 * widget->style->xthickness;
   
-  max_month_width = priv->max_month_width;
-  max_year_width = priv->max_year_width;
+    max_month_width = priv->max_month_width;
+    max_year_width = priv->max_year_width;
   
-  gtk_paint_shadow (widget->style, priv->header_win,
-		    GTK_STATE_NORMAL, GTK_SHADOW_OUT,
-		    NULL, widget, "calendar",
-		    0, 0, header_width, priv->header_h);
+    gtk_paint_shadow(widget->style, 
+                     priv->header_win, 
+                     GTK_STATE_NORMAL, 
+                     GTK_SHADOW_OUT, 
+                     NULL, 
+                     widget, 
+                     "calendar", 
+                     0, 
+                     0, 
+                     header_width, 
+                     priv->header_h);
 
-  tmp_time = 1;  /* Jan 1 1970, 00:00:01 UTC */
-  tm = gmtime (&tmp_time);
-  tm->tm_year = calendar->year - 1900;
+    tmp_time = 1;  /* Jan 1 1970, 00:00:01 UTC */
+    tm = gmtime(&tmp_time);
+    tm->tm_year = calendar->year - 1900;
 
-  /* Translators: This dictates how the year is displayed in
-   * dtkcalendar widget.  See strftime() manual for the format.
-   * Use only ASCII in the translation.
-   *
-   * Also look for the msgid "2000".
-   * Translate that entry to a year with the widest output of this
-   * msgid.
-   *
-   * "%Y" is appropriate for most locales.
-   */
-  strftime (buffer, sizeof (buffer), ("calendar year format", "%Y"), tm);
-  str = g_locale_to_utf8 (buffer, -1, NULL, NULL, NULL);
-  layout = gtk_widget_create_pango_layout (widget, str);
-  g_free (str);
+    /* Translators: This dictates how the year is displayed in
+     * dtkcalendar widget.  See strftime() manual for the format.
+     * Use only ASCII in the translation.
+     *
+     * Also look for the msgid "2000".
+     * Translate that entry to a year with the widest output of this
+     * msgid.
+     *
+     * "%Y" is appropriate for most locales.
+     */
+    strftime(buffer, sizeof(buffer), ("calendar year format", "%Y"), tm);
+    str = g_locale_to_utf8(buffer, -1, NULL, NULL, NULL);
+    layout = gtk_widget_create_pango_layout(widget, str);
+    g_free(str);
   
-  pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
+    pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
   
-  /* Draw title */
-  y = (priv->header_h - logical_rect.height) / 2;
+    /* Draw title */
+    y = (priv->header_h - logical_rect.height) / 2;
+
+    m_header_padding_x = header_width / 2 - max_year_width;
   
     /* Draw year and its arrows */
-  if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE)
-    if (year_left)
-      x = 3 + (max_year_width - logical_rect.width)/2;
-    else
-      x = header_width - (3 + max_year_width
-			  - (max_year_width - logical_rect.width)/2);
-  else
-    if (year_left)
-      x = 3 + priv->arrow_width + (max_year_width - logical_rect.width)/2;
-    else
-      x = header_width - (3 + priv->arrow_width + max_year_width
-			  - (max_year_width - logical_rect.width)/2);
-  
+    if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE) {
+        if (year_left) {
+            x = 3 + (max_year_width - logical_rect.width)/2;
+            /* TODO: + padding_x */
+            x += m_header_padding_x;
+        } else {
+            x = header_width - (3 + max_year_width - 
+                (max_year_width - logical_rect.width) / 2);
+            /* TODO: - padding_x */
+            x -= m_header_padding_x;
+        }
+    } else {
+        if (year_left) {
+            x = 3 + priv->arrow_width + 
+                (max_year_width - logical_rect.width) / 2;
+            x += m_header_padding_x;
+        } else {
+            GdkRectangle rect;
+            calendar_arrow_rectangle(calendar, ARROW_YEAR_LEFT, &rect);
+            x = rect.x + priv->arrow_width + ARROW_TEXT_SPACE;
+        }
+    }
 
-  gdk_cairo_set_source_color (cr, HEADER_FG_COLOR (GTK_WIDGET (calendar)));
-    /* TODO: x + HEADER_PADDING_X */
-    cairo_move_to (cr, x, y);
-  pango_cairo_show_layout (cr, layout);
+    gdk_cairo_set_source_color (cr, HEADER_FG_COLOR (GTK_WIDGET (calendar)));
+    cairo_move_to(cr, x, y);
+    pango_cairo_show_layout(cr, layout);
   
   /* Draw month */
   g_snprintf (buffer, sizeof (buffer), "%s", default_monthname[calendar->month]);
@@ -2374,12 +2387,12 @@ calendar_paint_day_names (DtkCalendar *calendar)
   cairo_destroy (cr);
 }
 
-static void
-calendar_paint_week_numbers (DtkCalendar *calendar)
+static void calendar_paint_week_numbers(DtkCalendar *calendar)
 {
   GtkWidget *widget = GTK_WIDGET (calendar);
   DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
   cairo_t *cr;
+    GdkColor bg_color;
 
   guint week = 0, year;
   gint row, x_loc, y_loc;
@@ -2401,8 +2414,8 @@ calendar_paint_week_numbers (DtkCalendar *calendar)
   /*
    * Draw a rectangle as inverted background for the labels.
    */
-
-  gdk_cairo_set_source_color (cr, SELECTED_BG_COLOR (widget));
+    gdk_color_parse(WEEK_NUM_BG_COLOR, &bg_color);
+    gdk_cairo_set_source_color(cr, &bg_color);
   if (priv->day_name_win)
     cairo_rectangle (cr, 
 		     CALENDAR_MARGIN,
@@ -2423,7 +2436,7 @@ calendar_paint_week_numbers (DtkCalendar *calendar)
   
   layout = gtk_widget_create_pango_layout (widget, NULL);
   
-  gdk_cairo_set_source_color (cr, SELECTED_FG_COLOR (widget));
+    gdk_cairo_set_source_color(cr, &bg_color);
   day_height = calendar_row_height (calendar);
   for (row = 0; row < 6; row++)
     {
@@ -2715,9 +2728,7 @@ calendar_invalidate_arrow (DtkCalendar *calendar,
     gdk_window_invalidate_rect (window, NULL, FALSE);
 }
 
-static void
-calendar_paint_arrow (DtkCalendar *calendar,
-		      guint	       arrow)
+static void calendar_paint_arrow(DtkCalendar *calendar, guint arrow)
 {
   GtkWidget *widget = GTK_WIDGET (calendar);
   DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (widget);
@@ -2773,7 +2784,7 @@ static gboolean dtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 	        calendar_paint_day_names(calendar);
       
         if (event->window == priv->week_win)
-	        calendar_paint_week_numbers (calendar);
+	        calendar_paint_week_numbers(calendar);
       
         if (event->window == widget->window) {
 	        gtk_paint_shadow(widget->style, 
