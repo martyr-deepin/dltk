@@ -59,6 +59,8 @@
 #define GTK_PARAM_READWRITE G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB
 #define _gtk_marshal_VOID__VOID g_cclosure_marshal_VOID__VOID
 
+#define HEADER_PADDING_X 30
+
 /***************************************************************************/
 /* The following date routines are taken from the lib_date package. 
  * They have been minimally edited to avoid conflict with types defined
@@ -2244,8 +2246,7 @@ calendar_paint_header (DtkCalendar *calendar)
   /* Draw title */
   y = (priv->header_h - logical_rect.height) / 2;
   
-  /* Draw year and its arrows */
-  
+    /* Draw year and its arrows */
   if (calendar->display_flags & DTK_CALENDAR_NO_MONTH_CHANGE)
     if (year_left)
       x = 3 + (max_year_width - logical_rect.width)/2;
@@ -2261,7 +2262,8 @@ calendar_paint_header (DtkCalendar *calendar)
   
 
   gdk_cairo_set_source_color (cr, HEADER_FG_COLOR (GTK_WIDGET (calendar)));
-  cairo_move_to (cr, x, y);
+    /* TODO: x + HEADER_PADDING_X */
+    cairo_move_to (cr, x, y);
   pango_cairo_show_layout (cr, layout);
   
   /* Draw month */
@@ -2749,37 +2751,43 @@ calendar_paint_arrow (DtkCalendar *calendar,
     }
 }
 
-static gboolean
-dtk_calendar_expose (GtkWidget	    *widget,
-		     GdkEventExpose *event)
+static gboolean dtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 {
-  DtkCalendar *calendar = DTK_CALENDAR (widget);
-  DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (widget);
-  int i;
+    DtkCalendar *calendar = DTK_CALENDAR(widget);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(widget);
+    int i;
 
-  if (gtk_widget_is_drawable (widget))
-    {
-      if (event->window == priv->main_win)
-	calendar_paint_main (calendar);
+    if (gtk_widget_is_drawable(widget)) {
+        if (event->window == priv->main_win) 
+            calendar_paint_main(calendar);
       
-      if (event->window == priv->header_win)
-	calendar_paint_header (calendar);
+        if (event->window == priv->header_win)
+	        calendar_paint_header(calendar);
 
-      for (i = 0; i < 4; i++)
-	if (event->window == priv->arrow_win[i])
-	  calendar_paint_arrow (calendar, i);
+        for (i = 0; i < 4; i++) {
+	        if (event->window == priv->arrow_win[i])
+	            calendar_paint_arrow(calendar, i);
+        }
       
-      if (event->window == priv->day_name_win)
-	calendar_paint_day_names (calendar);
+        if (event->window == priv->day_name_win)
+	        calendar_paint_day_names(calendar);
       
-      if (event->window == priv->week_win)
-	calendar_paint_week_numbers (calendar);
-      if (event->window == widget->window)
-	{
-	  gtk_paint_shadow (widget->style, widget->window, gtk_widget_get_state (widget),
-			    GTK_SHADOW_IN, NULL, widget, "calendar",
-			    0, 0, widget->allocation.width, widget->allocation.height);
-	}
+        if (event->window == priv->week_win)
+	        calendar_paint_week_numbers (calendar);
+      
+        if (event->window == widget->window) {
+	        gtk_paint_shadow(widget->style, 
+                             widget->window, 
+                             gtk_widget_get_state(widget), 
+                             GTK_SHADOW_IN, 
+                             NULL, 
+                             widget, 
+                             "calendar", 
+                             0, 
+                             0, 
+                             widget->allocation.width, 
+                             widget->allocation.height);
+	    }
     }
   
   return FALSE;
