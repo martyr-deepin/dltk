@@ -2574,9 +2574,10 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
             gdk_cairo_rectangle(cr, &day_rect);
             cairo_stroke(cr);
 	    }
-        if (calendar->selected_day == day)
-	        text_color = SELECTED_FG_COLOR (widget);
-        else if (calendar->marked_date[day-1])
+        if (calendar->selected_day == day) {
+	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
+            text_color = &day_fg_color;
+        } else if (calendar->marked_date[day-1])
 	        text_color = MARKED_COLOR (widget);
         else
 	        text_color = NORMAL_DAY_COLOR (widget);
@@ -2606,10 +2607,9 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
   y_loc = day_rect.y;
 
     /* TODO: draw text color */
-    gdk_color_parse(DAY_FG_COLOR, &day_fg_color);
-    gdk_cairo_set_source_color(cr, &day_fg_color);
-  cairo_move_to (cr, x_loc, y_loc);
-  pango_cairo_show_layout (cr, layout);
+    gdk_cairo_set_source_color(cr, text_color);
+    cairo_move_to (cr, x_loc, y_loc);
+    pango_cairo_show_layout (cr, layout);
 
   if (calendar->day_month[row][col] == MONTH_CURRENT &&
      (calendar->marked_date[day-1] || (detail && !show_details)))
