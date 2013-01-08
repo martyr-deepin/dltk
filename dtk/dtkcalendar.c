@@ -70,6 +70,8 @@
 #define SELECTED_TEXT_BG_COLOR "#EBF4FD"
 #define SELECTED_TEXT_BORDER_COLOR "#7CA3CE"
 #define DAY_FG_COLOR "#000000"
+#define DAY_DETAIL_COLOR "#E5E5E5"
+#define DAY_DETAIL_ACTIVE_COLOR "#A7BEDB"
 
 /***************************************************************************/
 /* The following date routines are taken from the lib_date package. 
@@ -2532,6 +2534,7 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
     GdkColor text_bg_color;
     GdkColor text_border_color;
     GdkColor day_fg_color;
+    GdkColor day_detail_color;
     GdkColor *text_color;
     gchar *detail;
     gchar buffer[32];
@@ -2557,7 +2560,7 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
     if (calendar->day_month[row][col] == MONTH_PREV) {
         text_color = PREV_MONTH_COLOR(widget);
     } else if (calendar->day_month[row][col] == MONTH_NEXT) {
-      text_color =  NEXT_MONTH_COLOR(widget);
+        text_color =  NEXT_MONTH_COLOR(widget);
     } else {
 #if 0      
         if (calendar->highlight_row == row && calendar->highlight_col == col) {
@@ -2628,12 +2631,16 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
     if (priv->detail_func && show_details) {
         cairo_save(cr);
 
-        if (calendar->selected_day == day)
-            gdk_cairo_set_source_color(cr, &widget->style->text[GTK_STATE_ACTIVE]);
-        else if (calendar->day_month[row][col] == MONTH_CURRENT)
-            gdk_cairo_set_source_color(cr, &widget->style->base[GTK_STATE_ACTIVE]);
-        else
-            gdk_cairo_set_source_color(cr, &widget->style->base[GTK_STATE_INSENSITIVE]);
+        if (calendar->selected_day == day) {
+            gdk_color_parse(DAY_DETAIL_ACTIVE_COLOR, &day_detail_color);
+            gdk_cairo_set_source_color(cr, &day_detail_color);
+        } else if (calendar->day_month[row][col] == MONTH_CURRENT) {
+            gdk_color_parse(DAY_DETAIL_COLOR, &day_detail_color);
+            gdk_cairo_set_source_color(cr, &day_detail_color);
+        } else {
+            gdk_color_parse(DAY_DETAIL_COLOR, &day_detail_color);
+            gdk_cairo_set_source_color(cr, &day_detail_color);
+        }
 
         cairo_set_line_width(cr, 1);
         cairo_move_to(cr, day_rect.x + 2, y_loc + 0.5);
