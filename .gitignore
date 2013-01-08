@@ -1,3 +1,9 @@
+*.m4
+*.sh
+*.make
+*.pc
+config.*
+
 # Object files
 *.o
 

@@ -61,7 +61,7 @@
 
 #define ARROW_SPACE 20
 #define ARROW_TEXT_SPACE 5
-#define BORDER_LINE_WIDTH 1.0
+#define LINE_WIDTH 1
 #define DAY_NAME_PADDING 3
 #define BORDER_COLOR "#E2E2E2"
 #define DTK_HEADER_BG_COLOR "#EEEEEE"
@@ -100,11 +100,16 @@ static void m_draw_rect_stroke(GdkWindow *window,
                                int width, 
                                int height, 
                                gchar *color_spec);
+static void m_draw_rect_fill(GdkWindow *window,                                 
+                             int x,                                             
+                             int y,                                             
+                             int width,                                         
+                             int height,                                        
+                             gchar *color_spec);
 
-static gboolean 
-leap (guint year)
+static gboolean leap (guint year)
 {
-  return((((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0));
+    return((((year % 4) == 0) && ((year % 100) != 0)) || ((year % 400) == 0));
 }
 
 static guint 
@@ -2521,8 +2526,8 @@ is_color_attribute (PangoAttribute *attribute,
 
 static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
 {
-    GtkWidget *widget = GTK_WIDGET (calendar);
-    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE (calendar);
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DtkCalendarPrivate *priv = DTK_CALENDAR_GET_PRIVATE(calendar);
     cairo_t *cr;
     GdkColor text_bg_color;
     GdkColor text_border_color;
@@ -2539,21 +2544,20 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
     gboolean overflow = FALSE;
     gboolean show_details;
 
-    g_return_if_fail (row < 6);
-    g_return_if_fail (col < 7);
+    g_return_if_fail(row < 6);
+    g_return_if_fail(col < 7);
 
-    cr = gdk_cairo_create (priv->main_win);
+    cr = gdk_cairo_create(priv->main_win);
 
     day = calendar->day[row][col];
-    show_details = (calendar->display_flags & DTK_CALENDAR_SHOW_DETAILS);
+    show_details = calendar->display_flags & DTK_CALENDAR_SHOW_DETAILS;
 
-    calendar_day_rectangle (calendar, row, col, &day_rect);
+    calendar_day_rectangle(calendar, row, col, &day_rect);
   
     if (calendar->day_month[row][col] == MONTH_PREV) {
-        text_color = PREV_MONTH_COLOR (widget);
-    } 
-    else if (calendar->day_month[row][col] == MONTH_NEXT) {
-      text_color =  NEXT_MONTH_COLOR (widget);
+        text_color = PREV_MONTH_COLOR(widget);
+    } else if (calendar->day_month[row][col] == MONTH_NEXT) {
+      text_color =  NEXT_MONTH_COLOR(widget);
     } else {
 #if 0      
         if (calendar->highlight_row == row && calendar->highlight_col == col) {
@@ -2566,7 +2570,8 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
         if (calendar->selected_day == day) {
 	        gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
             gdk_cairo_set_source_color(cr, &text_bg_color);
-	        gdk_cairo_rectangle(cr, &day_rect);
+	        cairo_set_line_width(cr, LINE_WIDTH);
+            gdk_cairo_rectangle(cr, &day_rect);
             cairo_fill(cr);
 
             gdk_color_parse(SELECTED_TEXT_BORDER_COLOR, &text_border_color);
@@ -2577,129 +2582,128 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
             text_color = &day_fg_color;
-        } else if (calendar->marked_date[day-1])
-	        text_color = MARKED_COLOR (widget);
-        else
-	        text_color = NORMAL_DAY_COLOR (widget);
+        } else if (calendar->marked_date[day-1]) {
+	        text_color = MARKED_COLOR(widget);
+        } else {
+	        text_color = NORMAL_DAY_COLOR(widget);
+        }
     }
 
-  /* Translators: this defines whether the day numbers should use
-   * localized digits or the ones used in English (0123...).
-   *
-   * Translate to "%Id" if you want to use localized digits, or
-   * translate to "%d" otherwise.
-   *
-   * Note that translating this doesn't guarantee that you get localized
-   * digits. That needs support from your system and locale definition
-   * too.
-   */
-  g_snprintf (buffer, sizeof (buffer), ("calendar:day:digits", "%d"), day);
+    /* Translators: this defines whether the day numbers should use
+     * localized digits or the ones used in English (0123...).
+     *
+     * Translate to "%Id" if you want to use localized digits, or
+     * translate to "%d" otherwise.
+     *
+     * Note that translating this doesn't guarantee that you get localized
+     * digits. That needs support from your system and locale definition
+     * too.
+     */
+    g_snprintf(buffer, sizeof(buffer), ("calendar:day:digits", "%d"), day);
 
-  /* Get extra information to show, if any: */
+    /* Get extra information to show, if any: */
 
-  detail = dtk_calendar_get_detail (calendar, row, col);
+    detail = dtk_calendar_get_detail(calendar, row, col);
 
-  layout = gtk_widget_create_pango_layout (widget, buffer);
-  pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
-  pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
+    layout = gtk_widget_create_pango_layout(widget, buffer);
+    pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+    pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
   
-  x_loc = day_rect.x + (day_rect.width - logical_rect.width) / 2;
-  y_loc = day_rect.y;
+    x_loc = day_rect.x + (day_rect.width - logical_rect.width) / 2;
+    y_loc = day_rect.y;
 
     /* TODO: draw text color */
     gdk_cairo_set_source_color(cr, text_color);
-    cairo_move_to (cr, x_loc, y_loc);
-    pango_cairo_show_layout (cr, layout);
+    cairo_move_to(cr, x_loc, y_loc);
+    pango_cairo_show_layout(cr, layout);
 
-  if (calendar->day_month[row][col] == MONTH_CURRENT &&
-     (calendar->marked_date[day-1] || (detail && !show_details)))
-    {
-      cairo_move_to (cr, x_loc - 1, y_loc);
-      pango_cairo_show_layout (cr, layout);
+    if (calendar->day_month[row][col] == MONTH_CURRENT && 
+        (calendar->marked_date[day-1] || (detail && !show_details))) {
+        cairo_move_to(cr, x_loc - 1, y_loc);
+        pango_cairo_show_layout(cr, layout);
     }
 
-  y_loc += priv->max_day_char_descent;
+    y_loc += priv->max_day_char_descent;
 
-  if (priv->detail_func && show_details)
-    {
-      cairo_save (cr);
+    if (priv->detail_func && show_details) {
+        cairo_save(cr);
 
-      if (calendar->selected_day == day)
-        gdk_cairo_set_source_color (cr, &widget->style->text[GTK_STATE_ACTIVE]);
-      else if (calendar->day_month[row][col] == MONTH_CURRENT)
-        gdk_cairo_set_source_color (cr, &widget->style->base[GTK_STATE_ACTIVE]);
-      else
-        gdk_cairo_set_source_color (cr, &widget->style->base[GTK_STATE_INSENSITIVE]);
+        if (calendar->selected_day == day)
+            gdk_cairo_set_source_color(cr, &widget->style->text[GTK_STATE_ACTIVE]);
+        else if (calendar->day_month[row][col] == MONTH_CURRENT)
+            gdk_cairo_set_source_color(cr, &widget->style->base[GTK_STATE_ACTIVE]);
+        else
+            gdk_cairo_set_source_color(cr, &widget->style->base[GTK_STATE_INSENSITIVE]);
 
-      cairo_set_line_width (cr, 1);
-      cairo_move_to (cr, day_rect.x + 2, y_loc + 0.5);
-      cairo_line_to (cr, day_rect.x + day_rect.width - 2, y_loc + 0.5);
-      cairo_stroke (cr);
+        cairo_set_line_width(cr, 1);
+        cairo_move_to(cr, day_rect.x + 2, y_loc + 0.5);
+        cairo_line_to(cr, day_rect.x + day_rect.width - 2, y_loc + 0.5);
+        cairo_stroke(cr);
 
-      cairo_restore (cr);
+        cairo_restore(cr);
 
-      y_loc += 2;
+        y_loc += 2;
     }
 
-  if (detail && show_details)
-    {
-      gchar *markup = g_strconcat ("<small>", detail, "</small>", NULL);
-      pango_layout_set_markup (layout, markup, -1);
-      g_free (markup);
+    if (detail && show_details) {
+        gchar *markup = g_strconcat("<small>", detail, "</small>", NULL);
+        pango_layout_set_markup(layout, markup, -1);
+        g_free(markup);
 
-      if (day == calendar->selected_day)
-        {
-          /* Stripping colors as they conflict with selection marking. */
+        if (day == calendar->selected_day) {
+            /* Stripping colors as they conflict with selection marking. */
 
-          PangoAttrList *attrs = pango_layout_get_attributes (layout);
-          PangoAttrList *colors = NULL;
+            PangoAttrList *attrs = pango_layout_get_attributes(layout);
+            PangoAttrList *colors = NULL;
 
-          if (attrs)
-            colors = pango_attr_list_filter (attrs, is_color_attribute, NULL);
-          if (colors)
-            pango_attr_list_unref (colors);
+            if (attrs)
+                colors = pango_attr_list_filter(attrs, is_color_attribute, NULL);
+            if (colors)
+                pango_attr_list_unref(colors);
         }
 
-      pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
-      pango_layout_set_width (layout, PANGO_SCALE * day_rect.width);
+        pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
+        pango_layout_set_width(layout, PANGO_SCALE * day_rect.width);
 
-      if (priv->detail_height_rows)
-        {
-          gint dy = day_rect.height - (y_loc - day_rect.y);
-          pango_layout_set_height (layout, PANGO_SCALE * dy);
-          pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+        if (priv->detail_height_rows) {
+            gint dy = day_rect.height - (y_loc - day_rect.y);
+            pango_layout_set_height(layout, PANGO_SCALE * dy);
+            pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
         }
 
-      cairo_move_to (cr, day_rect.x, y_loc);
-      pango_cairo_show_layout (cr, layout);
+        cairo_move_to(cr, day_rect.x, y_loc);
+        pango_cairo_show_layout(cr, layout);
     }
 
-  if (gtk_widget_has_focus (widget)
-      && calendar->focus_row == row && calendar->focus_col == col)
-    {
-      GtkStateType state;
+    if (gtk_widget_has_focus (widget) 
+        && calendar->focus_row == row && calendar->focus_col == col) {
+        GtkStateType state;
 
-      if (calendar->selected_day == day)
-	state = gtk_widget_has_focus (widget) ? GTK_STATE_SELECTED : GTK_STATE_ACTIVE;
-      else
-	state = GTK_STATE_NORMAL;
+        if (calendar->selected_day == day)
+	        state = gtk_widget_has_focus(widget) ? GTK_STATE_SELECTED : GTK_STATE_ACTIVE;
+        else
+	        state = GTK_STATE_NORMAL;
       
-      gtk_paint_focus (widget->style, 
-		       priv->main_win,
-	               state,
-		       NULL, widget, "calendar-day",
-		       day_rect.x,     day_rect.y, 
-		       day_rect.width, day_rect.height);
+        gtk_paint_focus(widget->style, 
+                        priv->main_win, 
+                        state, 
+                        NULL, 
+                        widget, 
+                        "calendar-day", 
+                        day_rect.x,     
+                        day_rect.y, 
+                        day_rect.width, 
+                        day_rect.height);
     }
 
-  if (overflow)
-    priv->detail_overflow[row] |= (1 << col);
-  else
-    priv->detail_overflow[row] &= ~(1 << col);
+    if (overflow)
+        priv->detail_overflow[row] |= (1 << col);
+    else
+        priv->detail_overflow[row] &= ~(1 << col);
 
-  g_object_unref (layout);
-  cairo_destroy (cr);
-  g_free (detail);
+    g_object_unref(layout);
+    cairo_destroy(cr);
+    g_free(detail);
 }
 
 static void
@@ -2724,6 +2728,7 @@ calendar_invalidate_arrow (DtkCalendar *calendar,
     gdk_window_invalidate_rect (window, NULL, FALSE);
 }
 
+/* TODO: it is better to draw sexy arrow */
 static void calendar_paint_arrow(DtkCalendar *calendar, guint arrow)
 {
   GtkWidget *widget = GTK_WIDGET (calendar);
@@ -2774,7 +2779,7 @@ static void m_draw_rect_stroke(GdkWindow *window,
     gdk_color_parse(color_spec, &color);
     gdk_cairo_set_source_color(cr, &color);
 
-    cairo_set_line_width(cr, BORDER_LINE_WIDTH);
+    cairo_set_line_width(cr, LINE_WIDTH);
     cairo_rectangle(cr, x, y, width, height);
     cairo_stroke(cr);
 
@@ -2809,10 +2814,10 @@ static gboolean dtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 	        calendar_paint_week_numbers(calendar);
         
         m_draw_rect_stroke(widget->window, 
-                           BORDER_LINE_WIDTH, 
-                           BORDER_LINE_WIDTH, 
-                           widget->allocation.width - BORDER_LINE_WIDTH, 
-                           widget->allocation.height - BORDER_LINE_WIDTH, 
+                           LINE_WIDTH, 
+                           LINE_WIDTH, 
+                           widget->allocation.width - LINE_WIDTH, 
+                           widget->allocation.height - LINE_WIDTH, 
                            BORDER_COLOR);
     }
   
@@ -3348,7 +3353,7 @@ static void m_draw_rect_fill(GdkWindow *window,
     gdk_color_parse(color_spec, &color);                                            
     gdk_cairo_set_source_color(cr, &color);                                         
                                                                                     
-    cairo_set_line_width(cr, BORDER_LINE_WIDTH);                                    
+    cairo_set_line_width(cr, LINE_WIDTH);                                    
     cairo_rectangle(cr, x, y, width, height);                                       
     cairo_fill(cr);                                                               
                                                                                     
@@ -3374,38 +3379,24 @@ static void calendar_set_background(GtkWidget *widget)
     if (gtk_widget_get_realized(widget)) {
         for (i = 0; i < 4; i++) {
 	        if (priv->arrow_win[i]) {
-	            gdk_window_set_background(priv->arrow_win[i], HEADER_BG_COLOR (widget));
+	            gdk_window_set_background(priv->arrow_win[i], 
+                                          HEADER_BG_COLOR(widget));
             }
 	    }
         if (priv->header_win) {
-	        gdk_window_get_geometry(priv->header_win, &x, &y, &width, &height, &depth);
+	        gdk_window_get_geometry(priv->header_win, 
+                                    &x, 
+                                    &y, 
+                                    &width, 
+                                    &height, 
+                                    &depth);
             m_draw_rect_fill(priv->header_win, 
-                             x - BORDER_LINE_WIDTH, 
-                             y - BORDER_LINE_WIDTH, 
+                             x - LINE_WIDTH, 
+                             y - LINE_WIDTH, 
                              width, 
                              height, 
                              DTK_HEADER_BG_COLOR);
         }
-        /*
-        if (priv->day_name_win)
-	        gdk_window_set_background (priv->day_name_win, 
-				   BACKGROUND_COLOR (widget));
-        */
-        /*
-        if (priv->week_win)
-	gdk_window_set_background (priv->week_win,
-				   BACKGROUND_COLOR (widget));
-        */
-        /*
-        if (priv->main_win)
-	gdk_window_set_background (priv->main_win,
-				   BACKGROUND_COLOR (widget));
-        */
-        /*
-        if (widget->window)
-	        gdk_window_set_background (widget->window,
-				   BACKGROUND_COLOR (widget)); 
-        */
     }
 }
 
