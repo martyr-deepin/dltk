@@ -2645,7 +2645,8 @@ static void calendar_paint_day(DtkCalendar *calendar, gint row, gint col)
         cairo_set_line_width(cr, 1);
         cairo_move_to(cr, day_rect.x + 2, y_loc + 0.5);
         cairo_line_to(cr, day_rect.x + day_rect.width - 2, y_loc + 0.5);
-        cairo_stroke(cr);
+        /* TODO: weibo fans said it is better to remove the line :)
+        cairo_stroke(cr);*/
 
         cairo_restore(cr);
 
