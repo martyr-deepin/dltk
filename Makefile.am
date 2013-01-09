@@ -1,8 +1,8 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = po dtk
+SUBDIRS = po xtk
 ACLOCAL_AMFLAGS = -I m4INTROSPECTION_GIRS
 EXTRA_DIST =                    \
-	dtk+-2.0.pc.in	\
+	xtk+-2.0.pc.in	\
 	omf.make
 
 MAINTAINERCLEANFILES = 		\
@@ -26,4 +26,4 @@ MAINTAINERCLEANFILES = 		\
 	`find "$(srcdir)" -type f -name Makefile.in -print`
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = dtk+-2.0.pc
+pkgconfig_DATA = xtk+-2.0.pc

@@ -19,9 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.        
  */              
 
-#ifndef __DTK_H__
-#define __DTK_H__
+#ifndef __XTK_H__
+#define __XTK_H__
 
-#include <dtk/dtkcalendar.h>
+#include <xtk/xtkcalendar.h>
 
-#endif /* __DTK_H__ */
+#endif /* __XTK_H__ */
