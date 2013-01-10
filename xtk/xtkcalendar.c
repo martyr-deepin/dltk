@@ -2566,16 +2566,15 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
                                  day_rect.y, 
                                  day_rect.width, 
                                  day_rect.height, 
-                                 &text_border_color);
-            /* FIXME
+                                 &text_bg_color);
+            
             draw_rect_stroke_to_cr(cr, 
-                                   day_rect.x, 
-                                   day_rect.y, 
-                                   day_rect.width, 
-                                   day_rect.height, 
+                                   day_rect.x + LINE_WIDTH, 
+                                   day_rect.y + LINE_WIDTH, 
+                                   day_rect.width - LINE_WIDTH, 
+                                   day_rect.height - LINE_WIDTH, 
                                    &text_border_color, 
                                    LINE_WIDTH);
-            */
 	    }
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 

@@ -33,7 +33,7 @@ void draw_rect_stroke_to_cr(cairo_t *cr,
         cairo_set_antialias(cr, CAIRO_ANTIALIAS_NONE);                          
                                                                                 
     cairo_set_line_width(cr, line_width);                                       
-    gdk_cairo_set_source_color(cr, &color);
+    gdk_cairo_set_source_color(cr, color);
     cairo_rectangle(cr, x, y, width, height);                                   
     cairo_stroke(cr);     
 }
@@ -45,7 +45,7 @@ void draw_rect_fill_to_cr(cairo_t *cr,
                           int height,                                             
                           GdkColor *color)                                    
 {   
-    gdk_cairo_set_source_color(cr, &color);                                     
+    gdk_cairo_set_source_color(cr, color);                                     
     cairo_rectangle(cr, x, y, width, height);                                   
     cairo_fill(cr);                                                           
 }                       
