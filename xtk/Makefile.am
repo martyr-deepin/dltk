@@ -60,8 +60,10 @@ libtool_opts =							\
 
 
 source_h = xtk.h \
+           xtkdraw.h \
            xtkcalendar.h
-source_c = xtkcalendar.c
+source_c = xtkdraw.c \
+           xtkcalendar.c
 
 lib_LTLIBRARIES = libxtk-2.0.la
 

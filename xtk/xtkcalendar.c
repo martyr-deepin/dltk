@@ -56,6 +56,7 @@
 #include <gdk/gdkkeysyms-compat.h>
 
 #include "xtkcalendar.h"
+#include "xtkdraw.h"
 
 #define GTK_PARAM_READABLE G_PARAM_READABLE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB
 #define GTK_PARAM_READWRITE G_PARAM_READWRITE|G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB
@@ -63,10 +64,11 @@
 
 #define ARROW_PADDING 20
 #define ARROW_TEXT_PADDING 5
-#define LINE_WIDTH 1
+#define LINE_WIDTH 1.0
 #define DAY_NAME_PADDING 3
-#define MAIN_WIN_PADDING 15
-#define DAY_PADDING 10
+#define MAIN_WIN_PADDING 0
+#define DAY_PADDING 5
+#define DAY_FONT_SIZE 3
 #define MAIN_WIN_BG_COLOR "#FFFFFF"
 #define BORDER_COLOR "#E2E2E2"
 #define XTK_HEADER_BG_COLOR "#EEEEEE"
@@ -101,18 +103,6 @@ static guint  day_of_week(guint year, guint mm, guint dd);
 static glong  dates_difference(guint year1, guint mm1, guint dd1,
 			       guint year2, guint mm2, guint dd2);
 static guint  weeks_in_year(guint year);
-static void m_draw_rect_stroke(GdkWindow *window, 
-                               int x, 
-                               int y, 
-                               int width, 
-                               int height, 
-                               gchar *color_spec);
-static void m_draw_rect_fill(GdkWindow *window,                                 
-                             int x,                                             
-                             int y,                                             
-                             int width,                                         
-                             int height,                                        
-                             gchar *color_spec);
 
 static gboolean leap (guint year)
 {
@@ -1087,17 +1077,14 @@ calendar_select_and_focus_day (XtkCalendar *calendar,
   xtk_calendar_select_day (calendar, day);
 }
 
-
 /****************************************
  *     Layout computation utilities     *
  ****************************************/
-
-static gint
-calendar_row_height (XtkCalendar *calendar)
+static gint calendar_row_height(XtkCalendar *calendar)
 {
-  return (XTK_CALENDAR_GET_PRIVATE (calendar)->main_h - CALENDAR_MARGIN
-	  - ((calendar->display_flags & XTK_CALENDAR_SHOW_DAY_NAMES)
-	     ? calendar_get_ysep (calendar) : CALENDAR_MARGIN)) / 6;
+    return (XTK_CALENDAR_GET_PRIVATE(calendar)->main_h - CALENDAR_MARGIN 
+        - ((calendar->display_flags & XTK_CALENDAR_SHOW_DAY_NAMES) 
+        ? calendar_get_ysep(calendar) : CALENDAR_MARGIN)) / 6;
 }
 
 
@@ -2544,6 +2531,7 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
     GdkRectangle day_rect;
 
     PangoLayout *layout;
+    PangoFontDescription *font_desc = NULL;
     PangoRectangle logical_rect;
     gboolean overflow = FALSE;
     gboolean show_details;
@@ -2575,14 +2563,17 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
 	        gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
             gdk_cairo_set_source_color(cr, &text_bg_color);
 	        cairo_set_line_width(cr, LINE_WIDTH);
-            gdk_cairo_rectangle(cr, &day_rect);
+            //gdk_cairo_rectangle(cr, &day_rect);
+            cairo_rectangle(cr, day_rect.x, day_rect.y, day_rect.width, day_rect.height);
             cairo_fill(cr);
-            /*
-            gdk_color_parse(SELECTED_TEXT_BORDER_COLOR, &text_border_color);
-            gdk_cairo_set_source_color(cr, &text_border_color);
-            gdk_cairo_rectangle(cr, &day_rect);
-            cairo_stroke(cr);
-            */
+            
+            draw_rect_stroke_to_cr(cr, 
+                                   day_rect.x, 
+                                   day_rect.y, 
+                                   day_rect.width, 
+                                   day_rect.height, 
+                                   &text_border_color, 
+                                   LINE_WIDTH);
 	    }
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
@@ -2611,6 +2602,10 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
     detail = xtk_calendar_get_detail(calendar, row, col);
 
     layout = gtk_widget_create_pango_layout(widget, buffer);
+    /*
+    font_desc = font_desc_init(16);
+    pango_layout_set_font_description(layout, font_desc);
+    */
     pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
     pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
   
@@ -2773,33 +2768,6 @@ static void calendar_paint_arrow(XtkCalendar *calendar, guint arrow)
     }
 }
 
-static void m_draw_rect_stroke(GdkWindow *window, 
-                               int x, 
-                               int y, 
-                               int width, 
-                               int height, 
-                               gchar *color_spec) 
-{
-    cairo_t *cr = NULL;
-    GdkColor color;
-    
-    cr = gdk_cairo_create(window);
-    if (!cr) 
-        return;
-
-    gdk_color_parse(color_spec, &color);
-    gdk_cairo_set_source_color(cr, &color);
-
-    cairo_set_line_width(cr, LINE_WIDTH);
-    cairo_rectangle(cr, x, y, width, height);
-    cairo_stroke(cr);
-
-    if (cr) {
-        cairo_destroy(cr);
-        cr = NULL;
-    }
-}
-
 static gboolean xtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 {
     XtkCalendar *calendar = XTK_CALENDAR(widget);
@@ -2824,12 +2792,13 @@ static gboolean xtk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
         if (event->window == priv->week_win)
 	        calendar_paint_week_numbers(calendar);
         
-        m_draw_rect_stroke(widget->window, 
-                           LINE_WIDTH, 
-                           LINE_WIDTH, 
-                           widget->allocation.width - LINE_WIDTH, 
-                           widget->allocation.height + MAIN_WIN_PADDING + LINE_WIDTH, 
-                           BORDER_COLOR);
+        draw_rect_stroke_to_window(widget->window, 
+                                   LINE_WIDTH, 
+                                   LINE_WIDTH, 
+                                   widget->allocation.width - LINE_WIDTH, 
+                                   widget->allocation.height - LINE_WIDTH, 
+                                   BORDER_COLOR, 
+                                   LINE_WIDTH);
     }
   
     return FALSE;
@@ -3348,32 +3317,6 @@ xtk_calendar_key_press (GtkWidget   *widget,
   return return_val;
 }
 
-static void m_draw_rect_fill(GdkWindow *window, 
-                             int x, 
-                             int y, 
-                             int width, 
-                             int height, 
-                             gchar *color_spec) 
-{
-    cairo_t *cr = NULL;                                                             
-    GdkColor color;                                                                 
-                                                                                    
-    cr = gdk_cairo_create(window);                                                  
-    if (!cr)                                                                        
-        return;                                                                     
-    gdk_color_parse(color_spec, &color);                                            
-    gdk_cairo_set_source_color(cr, &color);                                         
-                                                                                    
-    cairo_set_line_width(cr, LINE_WIDTH);                                    
-    cairo_rectangle(cr, x, y, width, height);                                       
-    cairo_fill(cr);                                                               
-                                                                                    
-    if (cr) {                                                                       
-        cairo_destroy(cr);                                                          
-        cr = NULL;                                                                  
-    }            
-}
-
 /****************************************
  *           Misc widget methods        *
  ****************************************/
@@ -3401,12 +3344,12 @@ static void calendar_set_background(GtkWidget *widget)
                                     &width, 
                                     &height, 
                                     &depth);
-            m_draw_rect_fill(priv->header_win, 
-                             x - LINE_WIDTH, 
-                             y - LINE_WIDTH, 
-                             width, 
-                             height, 
-                             XTK_HEADER_BG_COLOR);
+            draw_rect_fill_to_window(priv->header_win, 
+                                     x - LINE_WIDTH, 
+                                     y - LINE_WIDTH, 
+                                     width, 
+                                     height, 
+                                     XTK_HEADER_BG_COLOR);
         }
     }
 }
