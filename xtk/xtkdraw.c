@@ -21,32 +21,6 @@
 
 #include "xtkdraw.h"
 
-PangoFontDescription *font_desc_init(int size) 
-{
-    PangoFontDescription *font_desc = NULL;
-
-    font_desc = pango_font_description_new();
-    if (!font_desc) 
-        return NULL;
-
-    pango_font_description_set_family(font_desc, "WenQuanYi");
-    pango_font_description_set_style(font_desc, PANGO_STYLE_NORMAL);
-    pango_font_description_set_weight(font_desc, PANGO_WEIGHT_NORMAL);
-    pango_font_description_set_stretch(font_desc, PANGO_STRETCH_NORMAL);
-    pango_font_description_set_size(font_desc, size);
-
-    return font_desc;
-}
-
-void font_desc_cleanup(PangoFontDescription *font_desc) 
-{
-    if (!font_desc) 
-        return;
-
-    pango_font_description_free(font_desc);
-    font_desc = NULL;
-}
-
 void draw_rect_stroke_to_cr(cairo_t *cr,                                              
                             int x,                                                    
                             int y,                                                    
@@ -70,7 +44,7 @@ void draw_rect_fill_to_cr(cairo_t *cr,
                           int width,                                              
                           int height,                                             
                           GdkColor *color)                                    
-{                                                                               
+{   
     gdk_cairo_set_source_color(cr, &color);                                     
     cairo_rectangle(cr, x, y, width, height);                                   
     cairo_fill(cr);                                                           

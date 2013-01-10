@@ -68,7 +68,7 @@
 #define DAY_NAME_PADDING 3
 #define MAIN_WIN_PADDING 0
 #define DAY_PADDING 5
-#define DAY_FONT_SIZE 3
+#define DAY_FONT_DESC "WenQuanYi 9"
 #define MAIN_WIN_BG_COLOR "#FFFFFF"
 #define BORDER_COLOR "#E2E2E2"
 #define XTK_HEADER_BG_COLOR "#EEEEEE"
@@ -2561,12 +2561,13 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
         /* TODO: draw text bg color */
         if (calendar->selected_day == day) {
 	        gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
-            gdk_cairo_set_source_color(cr, &text_bg_color);
-	        cairo_set_line_width(cr, LINE_WIDTH);
-            //gdk_cairo_rectangle(cr, &day_rect);
-            cairo_rectangle(cr, day_rect.x, day_rect.y, day_rect.width, day_rect.height);
-            cairo_fill(cr);
-            
+            draw_rect_fill_to_cr(cr, 
+                                 day_rect.x, 
+                                 day_rect.y, 
+                                 day_rect.width, 
+                                 day_rect.height, 
+                                 &text_border_color);
+            /* FIXME
             draw_rect_stroke_to_cr(cr, 
                                    day_rect.x, 
                                    day_rect.y, 
@@ -2574,6 +2575,7 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
                                    day_rect.height, 
                                    &text_border_color, 
                                    LINE_WIDTH);
+            */
 	    }
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
@@ -2602,10 +2604,8 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
     detail = xtk_calendar_get_detail(calendar, row, col);
 
     layout = gtk_widget_create_pango_layout(widget, buffer);
-    /*
-    font_desc = font_desc_init(16);
+    font_desc = pango_font_description_from_string(DAY_FONT_DESC);
     pango_layout_set_font_description(layout, font_desc);
-    */
     pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
     pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
   

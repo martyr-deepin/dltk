@@ -24,8 +24,6 @@
 
 #include <gdk/gdk.h>
 
-PangoFontDescription *font_desc_init(int size);
-void font_desc_cleanup(PangoFontDescription *font_desc);
 void draw_rect_stroke_to_cr(cairo_t *cr, 
                             int x, 
                             int y, 
