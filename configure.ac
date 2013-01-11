@@ -48,8 +48,6 @@ GTK_DOC_CHECK([1.0],[--flavour=no-tmpl])
 dnl make sure we keep ACLOCAL_FLAGS around for maintainer builds to work
 AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
 
-GOBJECT_INTROSPECTION_CHECK([0.6.7])
-
 AC_PATH_PROG(GLIB_MKENUMS, glib-mkenums)
 
 dnl ================================================================
