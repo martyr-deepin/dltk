@@ -2580,7 +2580,23 @@ static void calendar_paint_day(XtkCalendar *calendar, gint row, gint col)
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
             text_color = &day_fg_color;
         } else if (calendar->marked_date[day-1]) {
-	        text_color = MARKED_COLOR(widget);
+            /* TODO: Deepin Style marked day */
+            draw_rect_fill_to_cr(cr,                                            
+                                 day_rect.x,                                    
+                                 day_rect.y,                                    
+                                 day_rect.width,                                
+                                 day_rect.height,                               
+                                 &text_bg_color);  
+
+            draw_rect_stroke_to_cr(cr,                                          
+                                   day_rect.x + LINE_WIDTH,                     
+                                   day_rect.y + LINE_WIDTH,                     
+                                   day_rect.width - LINE_WIDTH,                 
+                                   day_rect.height - LINE_WIDTH,                
+                                   &text_border_color,                          
+                                   LINE_WIDTH);      
+
+            text_color = MARKED_COLOR(widget);
         } else {
 	        text_color = NORMAL_DAY_COLOR(widget);
         }
