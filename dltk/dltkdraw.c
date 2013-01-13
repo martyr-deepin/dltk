@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.        
  */              
 
-#include "xtkdraw.h"
+#include "dltkdraw.h"
 
 void draw_rect_stroke_to_cr(cairo_t *cr,                                              
                             int x,                                                    

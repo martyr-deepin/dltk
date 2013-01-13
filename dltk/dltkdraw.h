@@ -19,8 +19,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.        
  */              
 
-#ifndef __XTKDRAW_H__
-#define __XTKDRAW_H__
+#ifndef __DLTKDRAW_H__
+#define __DLTKDRAW_H__
 
 #include <gdk/gdk.h>
 
@@ -51,4 +51,4 @@ void draw_rect_fill_to_window(GdkWindow *window,
                               int height,                                     
                               char *color_spec);                               
 
-#endif /* __XTKDRAW_H__ */
+#endif /* __DLTKDRAW_H__ */
