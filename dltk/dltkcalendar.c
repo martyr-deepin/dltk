@@ -68,6 +68,9 @@
 #define DAY_NAME_PADDING 3
 #define MAIN_WIN_PADDING 0
 #define DAY_PADDING 3
+#define HEADER_FONT_DESC "WenQuanYi 10"
+#define WEEKNUM_FONT_DESC "WenQuanYi 10"
+#define DAYNAME_FONT_DESC "WenQuanYi 10"
 #define DAY_FONT_DESC "WenQuanYi 9"
 #define MAIN_WIN_BG_COLOR "#FFFFFF"
 #define BORDER_COLOR "#E2E2E2"
@@ -1175,6 +1178,7 @@ calendar_row_from_y (DLtkCalendar *calendar,
   return row;
 }
 
+/* TODO: set arrow rectangle x, y, width, height */
 static void calendar_arrow_rectangle(DLtkCalendar *calendar, 
                                      guint arrow, 
                                      GdkRectangle *rect)
@@ -1203,8 +1207,9 @@ static void calendar_arrow_rectangle(DLtkCalendar *calendar,
         break;
     case ARROW_MONTH_RIGHT:
         if (year_left) {
+            /* FIXME: +10 pix for December */
             rect->x = (widget->allocation.width + ARROW_PADDING) / 2 + 
-                priv->max_month_width;
+                priv->max_month_width + 10;
         } else {
 	        rect->x = (widget->allocation.width - ARROW_PADDING) / 2;
         }
@@ -2204,6 +2209,7 @@ static void calendar_paint_header(DLtkCalendar *calendar)
     gint max_month_width;
     gint max_year_width;
     PangoLayout *layout;
+    PangoFontDescription *font_desc = NULL;
     PangoRectangle logical_rect;
     gboolean year_left;
     time_t tmp_time;
@@ -2242,6 +2248,8 @@ static void calendar_paint_header(DLtkCalendar *calendar)
     layout = gtk_widget_create_pango_layout(widget, str);
     g_free(str);
   
+    font_desc = pango_font_description_from_string(HEADER_FONT_DESC);              
+    pango_layout_set_font_description(layout, font_desc);
     pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
   
     /* Draw title */
@@ -2268,7 +2276,7 @@ static void calendar_paint_header(DLtkCalendar *calendar)
     if (calendar->display_flags & DLTK_CALENDAR_NO_MONTH_CHANGE) {
         if (year_left) {
             x = header_width - (3 + max_month_width
-			  - (max_month_width - logical_rect.width)/2);      
+			  - (max_month_width - logical_rect.width) / 2);      
         } else {
             x = 3 + (max_month_width - logical_rect.width) / 2;
         }
@@ -2280,6 +2288,10 @@ static void calendar_paint_header(DLtkCalendar *calendar)
     cairo_move_to(cr, x, y);
     pango_cairo_show_layout(cr, layout);
 
+    if (font_desc) {
+        pango_font_description_free(font_desc);
+        font_desc = NULL;
+    }
     g_object_unref(layout);
     cairo_destroy(cr);
 }
@@ -2294,6 +2306,7 @@ static void calendar_paint_day_names(DLtkCalendar *calendar)
     int day_width, cal_width;
     int day_wid_sep;
     PangoLayout *layout;
+    PangoFontDescription *font_desc = NULL;
     PangoRectangle logical_rect;
     gint focus_padding;
     gint focus_width;
@@ -2338,7 +2351,9 @@ static void calendar_paint_day_names(DLtkCalendar *calendar)
     /*
      * Write the labels
      */
-    layout = gtk_widget_create_pango_layout (widget, NULL);
+    layout = gtk_widget_create_pango_layout(widget, NULL);
+    font_desc = pango_font_description_from_string(DAYNAME_FONT_DESC);              
+    pango_layout_set_font_description(layout, font_desc);
 
     gdk_color_parse(DAY_NAME_FG_COLOR, &color);
     gdk_cairo_set_source_color(cr, &color);
@@ -2347,7 +2362,6 @@ static void calendar_paint_day_names(DLtkCalendar *calendar)
 	        day = 6 - i;
         else
 	        day = i;
-      
         
         day = (day + priv->week_start) % 7;
         g_snprintf(buffer, 
@@ -2355,48 +2369,56 @@ static void calendar_paint_day_names(DLtkCalendar *calendar)
                    "%s", 
                    default_abbreviated_dayname[day]);
 
-        pango_layout_set_text (layout, buffer, -1);
-        pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
+        pango_layout_set_text(layout, buffer, -1);
+        pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
 
         cairo_move_to(cr, 
 		     (CALENDAR_MARGIN +
-		      + (gtk_widget_get_direction (widget) == GTK_TEXT_DIR_LTR ?
+		      + (gtk_widget_get_direction(widget) == GTK_TEXT_DIR_LTR ?
 			 (priv->week_width + (priv->week_width ? calendar_xsep : 0))
 			 : 0)
 		      + day_wid_sep * i
-		      + (day_width - logical_rect.width)/2),
+		      + (day_width - logical_rect.width) / 2),
 		     CALENDAR_MARGIN + focus_width + focus_padding + logical_rect.y + 
              DAY_NAME_PADDING);
-        pango_cairo_show_layout (cr, layout);
+        pango_cairo_show_layout(cr, layout);
     }
   
+    if (font_desc) {
+        pango_font_description_free(font_desc);
+        font_desc = NULL;
+    }
+
     g_object_unref(layout);
     cairo_destroy(cr);
 }
 
 static void calendar_paint_week_numbers(DLtkCalendar *calendar)
 {
-  GtkWidget *widget = GTK_WIDGET (calendar);
-  DLtkCalendarPrivate *priv = DLTK_CALENDAR_GET_PRIVATE (calendar);
-  cairo_t *cr;
+    GtkWidget *widget = GTK_WIDGET(calendar);
+    DLtkCalendarPrivate *priv = DLTK_CALENDAR_GET_PRIVATE(calendar);
+    cairo_t *cr;
     GdkColor bg_color;
 
-  guint week = 0, year;
-  gint row, x_loc, y_loc;
-  gint day_height;
-  char buffer[32];
-  PangoLayout *layout;
-  PangoRectangle logical_rect;
-  gint focus_padding;
-  gint focus_width;
-  gint calendar_xsep = calendar_get_xsep (calendar);
+    guint week = 0, year;
+    gint row, x_loc, y_loc;
+    gint day_height;
+    char buffer[32];
+    PangoLayout *layout;
+    PangoFontDescription *font_desc = NULL;
+    PangoRectangle logical_rect;
+    gint focus_padding;
+    gint focus_width;
+    gint calendar_xsep = calendar_get_xsep(calendar);
 
-  cr = gdk_cairo_create (priv->week_win);
+    cr = gdk_cairo_create(priv->week_win);
   
-  gtk_widget_style_get (GTK_WIDGET (widget),
-			"focus-line-width", &focus_width,
-			"focus-padding", &focus_padding,
-			NULL);
+    gtk_widget_style_get(GTK_WIDGET(widget), 
+                         "focus-line-width", 
+                         &focus_width, 
+                         "focus-padding", 
+                         &focus_padding, 
+                         NULL);
   
     /*
      * Draw a rectangle as inverted background for the labels.
@@ -2404,67 +2426,74 @@ static void calendar_paint_week_numbers(DLtkCalendar *calendar)
     gdk_color_parse(DAY_NAME_BG_COLOR, &bg_color);
     gdk_cairo_set_source_color(cr, &bg_color);
     if (priv->day_name_win) {
-        cairo_rectangle (cr, 
-		     CALENDAR_MARGIN,
-		     0,
-		     priv->week_width - CALENDAR_MARGIN,
-		     priv->main_h - CALENDAR_MARGIN);
+        cairo_rectangle(cr, 
+                        CALENDAR_MARGIN, 
+                        0, 
+                        priv->week_width - CALENDAR_MARGIN, 
+                        priv->main_h - CALENDAR_MARGIN);
     } else {
-        cairo_rectangle (cr,
-		     CALENDAR_MARGIN,
-		     CALENDAR_MARGIN,
-		     priv->week_width - CALENDAR_MARGIN,
-		     priv->main_h - 2 * CALENDAR_MARGIN);
+        cairo_rectangle(cr, 
+                        CALENDAR_MARGIN, 
+                        CALENDAR_MARGIN, 
+                        priv->week_width - CALENDAR_MARGIN, 
+                        priv->main_h - 2 * CALENDAR_MARGIN);
     }
     cairo_fill (cr);
   
-  /*
-   * Write the labels
-   */
+    /*
+     * Write the labels
+     */
   
-  layout = gtk_widget_create_pango_layout (widget, NULL);
-  
+    layout = gtk_widget_create_pango_layout(widget, NULL);
+    font_desc = pango_font_description_from_string(WEEKNUM_FONT_DESC);              
+    pango_layout_set_font_description(layout, font_desc);
     gdk_cairo_set_source_color(cr, &bg_color);
-  day_height = calendar_row_height (calendar);
-  for (row = 0; row < 6; row++)
-    {
-      gboolean result;
+    day_height = calendar_row_height(calendar);
+    for (row = 0; row < 6; row++) {
+        gboolean result;
       
-      year = calendar->year;
-      if (calendar->day[row][6] < 15 && row > 3 && calendar->month == 11)
-	year++;
+        year = calendar->year;
+        if (calendar->day[row][6] < 15 && row > 3 && calendar->month == 11) 
+            year++;
 
-      result = week_of_year (&week, &year,		
-			     ((calendar->day[row][6] < 15 && row > 3 ? 1 : 0)
-			      + calendar->month) % 12 + 1, calendar->day[row][6]);
-      g_return_if_fail (result);
+        result = week_of_year(&week, 
+                              &year, 
+                              ((calendar->day[row][6] < 15 && row > 3 ? 1 : 0) 
+                               + calendar->month) % 12 + 1, 
+                              calendar->day[row][6]);
+        g_return_if_fail(result);
 
-      /* Translators: this defines whether the week numbers should use
-       * localized digits or the ones used in English (0123...).
-       *
-       * Translate to "%Id" if you want to use localized digits, or
-       * translate to "%d" otherwise.
-       *
-       * Note that translating this doesn't guarantee that you get localized
-       * digits. That needs support from your system and locale definition
-       * too.
-       */
-      g_snprintf (buffer, sizeof (buffer), ("calendar:week:digits", "%d"), week);
-      pango_layout_set_text (layout, buffer, -1);
-      pango_layout_get_pixel_extents (layout, NULL, &logical_rect);
+        /* Translators: this defines whether the week numbers should use
+         * localized digits or the ones used in English (0123...).
+         *
+         * Translate to "%Id" if you want to use localized digits, or
+         * translate to "%d" otherwise.
+         *
+         * Note that translating this doesn't guarantee that you get localized
+         * digits. That needs support from your system and locale definition
+         * too.
+         */
+        g_snprintf(buffer, sizeof(buffer), ("calendar:week:digits", "%d"), week);
+        pango_layout_set_text(layout, buffer, -1);
+        pango_layout_get_pixel_extents(layout, NULL, &logical_rect);
 
-      y_loc = calendar_top_y_for_row (calendar, row) + (day_height - logical_rect.height) / 2;
+        y_loc = calendar_top_y_for_row(calendar, row) + (day_height - logical_rect.height) / 2;
 
-      x_loc = (priv->week_width
-	       - logical_rect.width
-	       - calendar_xsep - focus_padding - focus_width);
+        x_loc = priv->week_width 
+            - logical_rect.width 
+            - calendar_xsep - focus_padding - focus_width;
 
-      cairo_move_to (cr, x_loc, y_loc);
-      pango_cairo_show_layout (cr, layout);
+        cairo_move_to(cr, x_loc, y_loc);
+        pango_cairo_show_layout(cr, layout);
     }
   
-  g_object_unref (layout);
-  cairo_destroy (cr);
+    if (font_desc) {
+        pango_font_description_free(font_desc);
+        font_desc = NULL;
+    }
+
+    g_object_unref(layout);
+    cairo_destroy(cr);
 }
 
 static void
@@ -2545,6 +2574,8 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
     show_details = calendar->display_flags & DLTK_CALENDAR_SHOW_DETAILS;
 
     calendar_day_rectangle(calendar, row, col, &day_rect);
+
+    gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
  
     if (calendar->day_month[row][col] == MONTH_PREV) {
         text_color = PREV_MONTH_COLOR(widget);
@@ -2557,17 +2588,24 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
 	        gdk_cairo_rectangle (cr, &day_rect);
 	        cairo_fill (cr);
 	    }
-#endif    
-        /* TODO: draw text bg color */
+#endif  
+        if (calendar->marked_date[day-1]) {                              
+            /* TODO: Deepin Style marked day */                                 
+            draw_rect_fill_to_cr(cr,                                            
+                                 day_rect.x,                                    
+                                 day_rect.y,                                    
+                                 day_rect.width,                                
+                                 day_rect.height,                               
+                                 &text_bg_color);                               
+            draw_rect_stroke_to_cr(cr,                                          
+                                   day_rect.x + LINE_WIDTH,                     
+                                   day_rect.y + LINE_WIDTH,                     
+                                   day_rect.width - LINE_WIDTH,                 
+                                   day_rect.height - LINE_WIDTH,                
+                                   &text_border_color,                          
+                                   LINE_WIDTH);     
+        }
         if (calendar->selected_day == day) {
-	        gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
-            draw_rect_fill_to_cr(cr, 
-                                 day_rect.x, 
-                                 day_rect.y, 
-                                 day_rect.width, 
-                                 day_rect.height, 
-                                 &text_bg_color);
-            
             draw_rect_stroke_to_cr(cr, 
                                    day_rect.x + LINE_WIDTH, 
                                    day_rect.y + LINE_WIDTH, 
@@ -2579,24 +2617,6 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
             text_color = &day_fg_color;
-        } else if (calendar->marked_date[day-1]) {
-            /* TODO: Deepin Style marked day */
-            draw_rect_fill_to_cr(cr,                                            
-                                 day_rect.x,                                    
-                                 day_rect.y,                                    
-                                 day_rect.width,                                
-                                 day_rect.height,                               
-                                 &text_bg_color);  
-
-            draw_rect_stroke_to_cr(cr,                                          
-                                   day_rect.x + LINE_WIDTH,                     
-                                   day_rect.y + LINE_WIDTH,                     
-                                   day_rect.width - LINE_WIDTH,                 
-                                   day_rect.height - LINE_WIDTH,                
-                                   &text_border_color,                          
-                                   LINE_WIDTH);      
-
-            text_color = MARKED_COLOR(widget);
         } else {
 	        text_color = NORMAL_DAY_COLOR(widget);
         }
