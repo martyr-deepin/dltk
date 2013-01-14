@@ -64,7 +64,8 @@
 
 #define ARROW_PADDING 20
 #define ARROW_TEXT_PADDING 5
-#define LINE_WIDTH 1.0
+#define LINE_WIDTH1 1.0
+#define LINE_WIDTH3 3.0
 #define DAY_NAME_PADDING 3
 #define MAIN_WIN_PADDING 0
 #define DAY_PADDING 3
@@ -74,6 +75,7 @@
 #define DAY_FONT_DESC "WenQuanYi 9"
 #define MAIN_WIN_BG_COLOR "#FFFFFF"
 #define BORDER_COLOR "#E2E2E2"
+#define EDIT_BORDER_COLOR "#DDF3FF"
 #define DLTK_HEADER_BG_COLOR "#EEEEEE"
 #define DAY_NAME_BG_COLOR "#EBF4FD"
 #define DAY_NAME_FG_COLOR "#000000"
@@ -259,57 +261,59 @@ static guint dltk_calendar_signals[LAST_SIGNAL] = { 0 };
 
 struct _DLtkCalendarPrivate
 {
-  GdkWindow *header_win;
-  GdkWindow *day_name_win;
-  GdkWindow *main_win;
-  GdkWindow *week_win;
-  GdkWindow *arrow_win[4];
+    GdkWindow *header_win;
+    GdkWindow *day_name_win;
+    GdkWindow *main_win;
+    GdkWindow *week_win;
+    GdkWindow *arrow_win[4];
 
-  guint header_h;
-  guint day_name_h;
-  guint main_h;
+    guint header_h;
+    guint day_name_h;
+    guint main_h;
 
-  guint	     arrow_state[4];
-  guint	     arrow_width;
-  guint	     max_month_width;
-  guint	     max_year_width;
+    guint	     arrow_state[4];
+    guint	     arrow_width;
+    guint	     max_month_width;
+    guint	     max_year_width;
   
-  guint day_width;
-  guint week_width;
+    guint day_width;
+    guint week_width;
 
-  guint min_day_width;
-  guint max_day_char_width;
-  guint max_day_char_ascent;
-  guint max_day_char_descent;
-  guint max_label_char_ascent;
-  guint max_label_char_descent;
-  guint max_week_char_width;
+    guint min_day_width;
+    guint max_day_char_width;
+    guint max_day_char_ascent;
+    guint max_day_char_descent;
+    guint max_label_char_ascent;
+    guint max_label_char_descent;
+    guint max_week_char_width;
   
-  /* flags */
-  guint year_before : 1;
+    /* flags */
+    guint year_before : 1;
 
-  guint need_timer  : 1;
+    guint need_timer  : 1;
 
-  guint in_drag : 1;
-  guint drag_highlight : 1;
+    guint in_drag : 1;
+    guint drag_highlight : 1;
 
-  guint32 timer;
-  gint click_child;
+    guint32 timer;
+    gint click_child;
 
-  gint week_start;
+    gint week_start;
 
-  gint drag_start_x;
-  gint drag_start_y;
+    gint drag_start_x;
+    gint drag_start_y;
 
-  /* Optional callback, used to display extra information for each day. */
-  DLtkCalendarDetailFunc detail_func;
-  gpointer              detail_func_user_data;
-  GDestroyNotify        detail_func_destroy;
+    /* Optional callback, used to display extra information for each day. */
+    DLtkCalendarDetailFunc detail_func;
+    gpointer              detail_func_user_data;
+    GDestroyNotify        detail_func_destroy;
 
-  /* Size requistion for details provided by the hook. */
-  gint detail_height_rows;
-  gint detail_width_chars;
-  gint detail_overflow[6];
+    /* Size requistion for details provided by the hook. */
+    gint detail_height_rows;
+    gint detail_width_chars;
+    gint detail_overflow[6];
+
+    gboolean editable;
 };
 
 #define DLTK_CALENDAR_GET_PRIVATE(widget)  (DLTK_CALENDAR (widget)->priv)
@@ -2598,21 +2602,21 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
                                  day_rect.height,                               
                                  &text_bg_color);                               
             draw_rect_stroke_to_cr(cr,                                          
-                                   day_rect.x + LINE_WIDTH,                     
-                                   day_rect.y + LINE_WIDTH,                     
-                                   day_rect.width - LINE_WIDTH,                 
-                                   day_rect.height - LINE_WIDTH,                
+                                   day_rect.x + LINE_WIDTH1,                     
+                                   day_rect.y + LINE_WIDTH1,                     
+                                   day_rect.width - LINE_WIDTH1,                 
+                                   day_rect.height - LINE_WIDTH1,                
                                    &text_border_color,                          
-                                   LINE_WIDTH);     
+                                   LINE_WIDTH1);     
         }
         if (calendar->selected_day == day) {
             draw_rect_stroke_to_cr(cr, 
-                                   day_rect.x + LINE_WIDTH, 
-                                   day_rect.y + LINE_WIDTH, 
-                                   day_rect.width - LINE_WIDTH, 
-                                   day_rect.height - LINE_WIDTH, 
+                                   day_rect.x + LINE_WIDTH1, 
+                                   day_rect.y + LINE_WIDTH1, 
+                                   day_rect.width - LINE_WIDTH1, 
+                                   day_rect.height - LINE_WIDTH1, 
                                    &text_border_color, 
-                                   LINE_WIDTH);
+                                   LINE_WIDTH1);
 	    }
         if (calendar->selected_day == day) {
 	        gdk_color_parse(DAY_FG_COLOR, &day_fg_color); 
@@ -2833,12 +2837,21 @@ static gboolean dltk_calendar_expose(GtkWidget *widget, GdkEventExpose *event)
 	        calendar_paint_week_numbers(calendar);
         
         draw_rect_stroke_to_window(widget->window, 
-                                   LINE_WIDTH, 
-                                   LINE_WIDTH, 
-                                   widget->allocation.width - LINE_WIDTH, 
-                                   widget->allocation.height - LINE_WIDTH, 
+                                   LINE_WIDTH1, 
+                                   LINE_WIDTH1, 
+                                   widget->allocation.width - LINE_WIDTH1, 
+                                   widget->allocation.height - LINE_WIDTH1, 
                                    BORDER_COLOR, 
-                                   LINE_WIDTH);
+                                   LINE_WIDTH1);
+        if (priv->editable) {
+            draw_rect_stroke_to_window(widget->window,                              
+                                       -LINE_WIDTH3,                                 
+                                       -LINE_WIDTH3,                                 
+                                       widget->allocation.width,          
+                                       widget->allocation.height,         
+                                       EDIT_BORDER_COLOR,                                
+                                       LINE_WIDTH3);    
+        }
     }
   
     return FALSE;
@@ -3385,8 +3398,8 @@ static void calendar_set_background(GtkWidget *widget)
                                     &height, 
                                     &depth);
             draw_rect_fill_to_window(priv->header_win, 
-                                     x - LINE_WIDTH, 
-                                     y - LINE_WIDTH, 
+                                     x - LINE_WIDTH1, 
+                                     y - LINE_WIDTH1, 
                                      width, 
                                      height, 
                                      DLTK_HEADER_BG_COLOR);
@@ -4176,6 +4189,18 @@ void
 dltk_calendar_thaw (DLtkCalendar *calendar)
 {
   g_return_if_fail (DLTK_IS_CALENDAR (calendar));
+}
+
+void dltk_calendar_set_editable(DLtkCalendar *calendar, gboolean editable) 
+{
+    DLtkCalendarPrivate *priv = NULL;
+    GtkWidget *widget = GTK_WIDGET(calendar);
+
+    priv = calendar->priv = G_TYPE_INSTANCE_GET_PRIVATE(calendar,       
+                                                        DLTK_TYPE_CALENDAR,                             
+                                                        DLtkCalendarPrivate); 
+    priv->editable = editable;
+    gtk_widget_queue_draw(widget);
 }
 
 #define __DLTK_CALENDAR_C__

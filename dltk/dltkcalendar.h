@@ -199,6 +199,8 @@ void	   dltk_calendar_freeze		(DLtkCalendar *calendar);
 void	   dltk_calendar_thaw		(DLtkCalendar *calendar);
 #endif
 
+void dltk_calendar_set_editable(DLtkCalendar *calendar, gboolean editable);
+
 G_END_DECLS
 
 #endif /* __DLTK_CALENDAR_H__ */
