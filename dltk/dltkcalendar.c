@@ -67,7 +67,7 @@
 #define LINE_WIDTH 1.0
 #define DAY_NAME_PADDING 3
 #define MAIN_WIN_PADDING 0
-#define DAY_PADDING 5
+#define DAY_PADDING 3
 #define DAY_FONT_DESC "WenQuanYi 9"
 #define MAIN_WIN_BG_COLOR "#FFFFFF"
 #define BORDER_COLOR "#E2E2E2"
@@ -2721,6 +2721,11 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
     else
         priv->detail_overflow[row] &= ~(1 << col);
 
+    if (font_desc) {
+        pango_font_description_free(font_desc);
+        font_desc = NULL;
+    }
+    
     g_object_unref(layout);
     cairo_destroy(cr);
     g_free(detail);
