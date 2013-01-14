@@ -80,7 +80,7 @@
 #define DAY_NAME_BG_COLOR "#EBF4FD"
 #define DAY_NAME_FG_COLOR "#000000"
 #define SELECTED_TEXT_BG_COLOR "#EBF4FD"
-#define SELECTED_TEXT_BORDER_COLOR "#7CA3CE"
+#define SELECTED_TEXT_BORDER_COLOR "#7EA4CF"
 #define DAY_FG_COLOR "#000000"
 #define DAY_DETAIL_COLOR "#E5E5E5"
 #define DAY_DETAIL_ACTIVE_COLOR "#A7BEDB"
@@ -1548,16 +1548,17 @@ calendar_realize_header (DLtkCalendar *calendar)
   calendar_realize_arrows (calendar);
 }
 
-static gint
-calendar_get_inner_border (DLtkCalendar *calendar)
+/* TODO: inner border */
+static gint calendar_get_inner_border (DLtkCalendar *calendar)
 {
-  gint inner_border;
+    gint inner_border;
 
-  gtk_widget_style_get (GTK_WIDGET (calendar),
-                        "inner-border", &inner_border,
-                        NULL);
+    gtk_widget_style_get(GTK_WIDGET(calendar), 
+                         "inner-border", 
+                         &inner_border, 
+                         NULL);
 
-  return inner_border;
+    return 0;
 }
 
 static gint
@@ -1601,21 +1602,14 @@ static void calendar_realize_day_names(DLtkCalendar *calendar)
         attributes.event_mask = gtk_widget_get_events (widget) | GDK_EXPOSURE_MASK;
         attributes_mask = GDK_WA_X | GDK_WA_Y | GDK_WA_VISUAL | GDK_WA_COLORMAP;
         attributes.x = (widget->style->xthickness + inner_border);
-        attributes.x -= DAY_NAME_PADDING;
         attributes.y = priv->header_h + (widget->style->ythickness 
 					   + inner_border);
-        attributes.y -= DAY_NAME_PADDING;
         attributes.width = widget->allocation.width - 
             (widget->style->xthickness + inner_border) * 2;
-        attributes.width += DAY_NAME_PADDING * 2;
         attributes.height = priv->day_name_h;
         priv->day_name_win = gdk_window_new(widget->window, 
                                             &attributes, 
                                             attributes_mask);
-      /*
-      gdk_window_set_background (priv->day_name_win, 
-				 BACKGROUND_COLOR ( GTK_WIDGET ( calendar)));
-      */
         gdk_window_show(priv->day_name_win);
         gdk_window_set_user_data(priv->day_name_win, widget);
     } else {
@@ -2139,7 +2133,6 @@ static void dltk_calendar_size_allocate(GtkWidget	  *widget,
 	gdk_window_move_resize (priv->header_win,
 				xthickness, ythickness,
 				allocation->width - 2 * xthickness, priv->header_h);
-
       for (i = 0 ; i < 4 ; i++)
 	{
 	  if (priv->arrow_win[i])
@@ -3398,8 +3391,8 @@ static void calendar_set_background(GtkWidget *widget)
                                     &height, 
                                     &depth);
             draw_rect_fill_to_window(priv->header_win, 
-                                     x - LINE_WIDTH1, 
-                                     y - LINE_WIDTH1, 
+                                     x, 
+                                     y, 
                                      width, 
                                      height, 
                                      DLTK_HEADER_BG_COLOR);
