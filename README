@@ -8,3 +8,5 @@ Build && Install
 make clean
 make
 sudo make install
+
+sudo python setup.py install
