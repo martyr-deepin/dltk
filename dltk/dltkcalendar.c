@@ -2081,7 +2081,7 @@ static void dltk_calendar_size_request(GtkWidget	     *widget,
                                  + max_detail_height
 				 + 2 * (focus_padding + focus_width))
 			  + DAY_YSEP * 5);
-    priv->main_h += MAIN_WIN_PADDING;
+    priv->main_h += DAY_PADDING * 14;
   height = (priv->header_h + priv->day_name_h 
 	    + priv->main_h);
   
