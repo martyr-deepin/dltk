@@ -1709,7 +1709,6 @@ static void dltk_calendar_realize(GtkWidget *widget)
         attributes.width -= priv->week_width;
 
     attributes.height = priv->main_h;
-    attributes.height += MAIN_WIN_PADDING;
     priv->main_win = gdk_window_new(widget->window, 
                                     &attributes, 
                                     attributes_mask);
@@ -2081,6 +2080,7 @@ static void dltk_calendar_size_request(GtkWidget	     *widget,
                                  + max_detail_height
 				 + 2 * (focus_padding + focus_width))
 			  + DAY_YSEP * 5);
+  if (max_detail_height == 0)
     priv->main_h += DAY_PADDING * 14;
   height = (priv->header_h + priv->day_name_h 
 	    + priv->main_h);
