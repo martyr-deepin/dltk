@@ -66,8 +66,7 @@
 #define ARROW_TEXT_PADDING 5
 #define LINE_WIDTH1 1.0
 #define LINE_WIDTH3 3.0
-#define DAY_NAME_PADDING 3
-#define MAIN_WIN_PADDING 0
+#define DAY_NAME_PADDING 0
 #define DAY_PADDING 3
 #define HEADER_FONT_DESC "WenQuanYi 10"
 #define WEEKNUM_FONT_DESC "WenQuanYi 10"
@@ -84,6 +83,8 @@
 #define DAY_FG_COLOR "#000000"
 #define DAY_DETAIL_COLOR "#E5E5E5"
 #define DAY_DETAIL_ACTIVE_COLOR "#A7BEDB"
+
+static gint m_day_padding = DAY_PADDING;
 
 /***************************************************************************/
 /* The following date routines are taken from the lib_date package. 
@@ -877,6 +878,8 @@ static void dltk_calendar_init(DLtkCalendar *calendar)
 #endif
 #endif
 
+    priv->editable = FALSE;
+
   calendar_compute_days (calendar);
 }
 
@@ -1151,7 +1154,7 @@ static gint calendar_top_y_for_row(DLtkCalendar *calendar,
     /* TODO: increase padding */
     return DLTK_CALENDAR_GET_PRIVATE(calendar)->main_h - 
         (CALENDAR_MARGIN + (6 - row) * calendar_row_height(calendar)) + 
-        row * DAY_PADDING;
+        row * m_day_padding;
 }
 
 /* row_from_y: returns the row 0-5 that the
@@ -1669,7 +1672,6 @@ static void dltk_calendar_realize(GtkWidget *widget)
     attributes.y = widget->allocation.y;
     attributes.width = widget->allocation.width;
     attributes.height = widget->allocation.height;
-    attributes.height += MAIN_WIN_PADDING;
     attributes.wclass = GDK_INPUT_OUTPUT;
     attributes.window_type = GDK_WINDOW_CHILD;
     attributes.event_mask =  gtk_widget_get_events(widget) 
@@ -2081,12 +2083,11 @@ static void dltk_calendar_size_request(GtkWidget	     *widget,
 				 + 2 * (focus_padding + focus_width))
 			  + DAY_YSEP * 5);
   if (max_detail_height == 0)
-    priv->main_h += DAY_PADDING * 14;
+    priv->main_h += m_day_padding * 14;
   height = (priv->header_h + priv->day_name_h 
 	    + priv->main_h);
   
   requisition->height = height + (widget->style->ythickness + inner_border) * 2;
-  requisition->height += MAIN_WIN_PADDING;
 
   g_object_unref (layout);
 }
@@ -2103,7 +2104,6 @@ static void dltk_calendar_size_allocate(GtkWidget	  *widget,
   gint calendar_xsep = calendar_get_xsep (calendar);
 
   widget->allocation = *allocation;
-  allocation->height += MAIN_WIN_PADDING;
     
   if (calendar->display_flags & DLTK_CALENDAR_SHOW_WEEK_NUMBERS)
     {
@@ -4193,6 +4193,14 @@ void dltk_calendar_set_editable(DLtkCalendar *calendar, gboolean editable)
                                                         DLTK_TYPE_CALENDAR,                             
                                                         DLtkCalendarPrivate); 
     priv->editable = editable;
+    gtk_widget_queue_draw(widget);
+}
+
+void dltk_calendar_set_day_padding(DLtkCalendar *calendar, gint day_padding) 
+{
+    GtkWidget *widget = GTK_WIDGET(calendar);
+
+    m_day_padding = day_padding;
     gtk_widget_queue_draw(widget);
 }
 

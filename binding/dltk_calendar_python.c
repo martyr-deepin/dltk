@@ -57,6 +57,7 @@ static PyObject *m_get_date(DLtkCalendarObject *self);
 static PyObject *m_mark_day(DLtkCalendarObject *self, PyObject *args);
 static PyObject *m_clear_marks(DLtkCalendarObject *self);
 static PyObject *m_set_editable(DLtkCalendarObject *self, PyObject *args);
+static PyObject *m_set_day_padding(DLtkCalendarObject *self, PyObject *args);
 
 static PyMethodDef dltk_calendar_object_methods[] = 
 {
@@ -66,6 +67,7 @@ static PyMethodDef dltk_calendar_object_methods[] =
     {"mark_day", m_mark_day, METH_VARARGS, "Mark day"}, 
     {"clear_marks", m_clear_marks, METH_NOARGS, "Clear all Marks"}, 
     {"set_editable", m_set_editable, METH_VARARGS, "Set Editable status"}, 
+    {"set_day_padding", m_set_day_padding, METH_VARARGS, "Set day padding"}, 
     {NULL, NULL, 0, NULL}
 };
 
@@ -288,6 +290,21 @@ static PyObject *m_set_editable(DLtkCalendarObject *self, PyObject *args)
     Py_INCREF(Py_True);
     return Py_True;
 }
+
+static PyObject *m_set_day_padding(DLtkCalendarObject *self, PyObject *args)          
+{                                                                                  
+    gint value = 0;                                       
+                                                                                   
+    if (!PyArg_ParseTuple(args, "n", &value)) {                                    
+        ERROR("invalid arguments to set_editable");                                                        
+        return NULL;                                                               
+    }                                                                              
+                                                                                   
+    dltk_calendar_set_day_padding(self->handle, value);                         
+                                                                                
+    Py_INCREF(Py_True);                                                         
+    return Py_True;                                                             
+}             
 
 static PyObject *m_get_date(DLtkCalendarObject *self) 
 {

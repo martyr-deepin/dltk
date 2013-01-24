@@ -200,6 +200,7 @@ void	   dltk_calendar_thaw		(DLtkCalendar *calendar);
 #endif
 
 void dltk_calendar_set_editable(DLtkCalendar *calendar, gboolean editable);
+void dltk_calendar_set_day_padding(DLtkCalendar *calendar, gint day_padding);
 
 G_END_DECLS
 
