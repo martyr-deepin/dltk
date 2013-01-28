@@ -79,7 +79,7 @@
 #define DAY_NAME_BG_COLOR "#EBF4FD"
 #define DAY_NAME_FG_COLOR "#000000"
 #define SELECTED_TEXT_BG_COLOR "#EBF4FD"
-#define SELECTED_TEXT_BORDER_COLOR "#7EA4CF"
+#define SELECTED_TEXT_BORDER_COLOR "#7CA3CE"
 #define DAY_FG_COLOR "#000000"
 #define DAY_DETAIL_COLOR "#E5E5E5"
 #define DAY_DETAIL_ACTIVE_COLOR "#A7BEDB"
@@ -2573,6 +2573,7 @@ static void calendar_paint_day(DLtkCalendar *calendar, gint row, gint col)
     calendar_day_rectangle(calendar, row, col, &day_rect);
 
     gdk_color_parse(SELECTED_TEXT_BG_COLOR, &text_bg_color);
+    gdk_color_parse(SELECTED_TEXT_BORDER_COLOR, &text_border_color);
  
     if (calendar->day_month[row][col] == MONTH_PREV) {
         text_color = PREV_MONTH_COLOR(widget);
