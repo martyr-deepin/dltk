@@ -52,7 +52,7 @@
 #ifdef G_OS_WIN32
 #include <windows.h>
 #endif
-
+#include <locale.h>
 #include <gdk/gdkkeysyms-compat.h>
 
 #include "dltkcalendar.h"
@@ -711,6 +711,12 @@ dltk_calendar_class_init (DLtkCalendarClass *class)
 
 static void dltk_calendar_init(DLtkCalendar *calendar)
 {
+    char *env_lang = NULL;
+
+    env_lang = g_getenv("LANGUAGE");
+    if (env_lang) 
+        setlocale(LC_TIME, env_lang);
+    
     GtkWidget *widget = GTK_WIDGET(calendar);
     time_t secs;
     struct tm *tm;
@@ -744,7 +750,7 @@ static void dltk_calendar_init(DLtkCalendar *calendar)
 #ifndef G_OS_WIN32
 	tmp_time= (i+3)*86400;
 	strftime ( buffer, sizeof (buffer), "%a", gmtime (&tmp_time));
-	default_abbreviated_dayname[i] = g_locale_to_utf8 (buffer, -1, NULL, NULL, NULL);
+    default_abbreviated_dayname[i] = g_locale_to_utf8 (buffer, -1, NULL, NULL, NULL);
 #else
 	if (!GetLocaleInfoW (GetThreadLocale (), LOCALE_SABBREVDAYNAME1 + (i+6)%7,
 			     wbuffer, G_N_ELEMENTS (wbuffer)))
