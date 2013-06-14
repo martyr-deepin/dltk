@@ -52,7 +52,6 @@
 #ifdef G_OS_WIN32
 #include <windows.h>
 #endif
-#include <locale.h>
 #include <gdk/gdkkeysyms-compat.h>
 
 #include "dltkcalendar.h"
@@ -711,12 +710,6 @@ dltk_calendar_class_init (DLtkCalendarClass *class)
 
 static void dltk_calendar_init(DLtkCalendar *calendar)
 {
-    char *env_lang = NULL;
-
-    env_lang = g_getenv("LANGUAGE");
-    if (env_lang) 
-        setlocale(LC_TIME, env_lang);
-    
     GtkWidget *widget = GTK_WIDGET(calendar);
     time_t secs;
     struct tm *tm;
