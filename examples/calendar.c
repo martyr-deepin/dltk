@@ -26,7 +26,9 @@ int main(int argc, char **argv)
     gtk_widget_show(calendar);
     gtk_widget_show(align);
     gtk_widget_show(window);
-  
+
+    dltk_calendar_select_day(calendar, 29);
+
     gtk_main();
 
     return 0;

@@ -2,6 +2,10 @@ DLtk
 ===
 The Deepin Linux Toolkit based on Gtk+-2.0
 
+Depend
+======
+sudo apt-get install python-gtk2-dev
+
 Build && Install
 ================
 ./autogen.sh --prefix=/usr
